@@ -1,0 +1,14 @@
+{
+  "name": "i18n-gs",
+  "version": "0.0.1",
+  "description": "Support Google Sheets import from and export to i18n json file.",
+  "main": "index.js",
+  "repository": "https://github.com/soapwong703/i18n-gs.git",
+  "author": "Soap Wong <68498079+soapwong703@users.noreply.github.com>",
+  "license": "MIT",
+  "dependencies": {
+    "flat": "^5.0.2",
+    "fs-extra": "^10.1.0",
+    "google-spreadsheet": "^3.3.0"
+  }
+}

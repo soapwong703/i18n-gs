@@ -1,2 +1,5 @@
 # i18n-gs
-google sheet import export for i18n
+
+# Description
+
+Support Google Sheets import from and export to i18n json file.
