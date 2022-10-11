@@ -2,11 +2,14 @@ module.exports = {
   locales: {
     // include: [],
   },
-  sheets: {
+  namespaces: {
     // include: [],
   },
-  credential: {
-    // path: "",
+  spreadsheet: {
+    sheetId: "",
+    credential: {
+      // path: "",
+    },
   },
   logging: {
     level: "info",

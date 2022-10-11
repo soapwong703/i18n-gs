@@ -3,7 +3,10 @@
 const fs = require("fs");
 const path = require("path");
 const { program } = require("commander");
-const { exit } = require("process");
+const { default: I18nGS } = require(path.resolve(
+  __dirname,
+  "./classes/i18nGS.ts"
+));
 
 const loadConfig = () => {
   try {
@@ -13,8 +16,7 @@ const loadConfig = () => {
   }
 };
 
-// program.option("--first").option("-s, --separator <char>");
-
+// Init
 program
   .command("init")
   .description("Initialize the project with config file")
@@ -29,14 +31,18 @@ program
     );
   });
 
+// Import
 program
   .command("import")
   .description("Import the files from google sheet")
   .action(() => {
     const config = loadConfig();
     console.log(config);
+    const i18nGS = new I18nGS(config);
+    i18nGS.connect();
   });
 
+// Export
 program
   .command("export")
   .description("Export the files to google sheet")
