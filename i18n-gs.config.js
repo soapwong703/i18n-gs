@@ -12,6 +12,6 @@ module.exports = {
     level: "info",
   },
   i18n: {
-    keyStyle: "auto" | "flat" | "nested",
+    keyStyle: "auto",
   },
 };
