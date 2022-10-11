@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+### Added
+
+- config type
+- config file template
+- command executor
+
 ## [0.0.1] - 2022-06-22
 
 - initial release
