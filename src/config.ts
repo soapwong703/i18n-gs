@@ -2,15 +2,12 @@ type Config = {
   locales: {
     include: string[];
   };
-  namespaces: {
+  sheets: {
     include: string[];
   };
-  spreadsheet: {
-    sheetId: string;
-    credential: {
-      path: string;
-      // or others methods
-    };
+  credential: {
+    path: string;
+    // or others methods
   };
   logging: {
     level: "none" | "error" | "warn" | "info" | "log" | "verbose";
