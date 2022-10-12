@@ -3,8 +3,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import { program } from "commander";
-import { generateConfigFile, getConfig } from "./utils/helper";
+import { generateConfigFile } from "./utils/helper";
 import { configFilename } from "./utils/constants";
+import I18nGS from "./classes/I18nGS";
 
 program
   .command("init")
@@ -25,16 +26,14 @@ program
   .command("import")
   .description("Import the files from google sheet")
   .action(() => {
-    const config = getConfig();
-    console.log(config);
+    const i18nGS = new I18nGS();
   });
 
 program
   .command("export")
   .description("Export the files to google sheet")
   .action(() => {
-    const config = getConfig();
-    console.log(config);
+    const i18nGS = new I18nGS();
   });
 
 program.parse();

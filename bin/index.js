@@ -6,6 +6,7 @@ const path = require("path");
 const commander_1 = require("commander");
 const helper_1 = require("./utils/helper");
 const constants_1 = require("./utils/constants");
+const I18nGS_1 = require("./classes/I18nGS");
 commander_1.program
     .command("init")
     .description("Initialize the project with config file")
@@ -20,15 +21,13 @@ commander_1.program
     .command("import")
     .description("Import the files from google sheet")
     .action(() => {
-    const config = (0, helper_1.getConfig)();
-    console.log(config);
+    const i18nGS = new I18nGS_1.default();
 });
 commander_1.program
     .command("export")
     .description("Export the files to google sheet")
     .action(() => {
-    const config = (0, helper_1.getConfig)();
-    console.log(config);
+    const i18nGS = new I18nGS_1.default();
 });
 commander_1.program.parse();
 //# sourceMappingURL=index.js.map
