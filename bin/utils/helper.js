@@ -13,6 +13,7 @@ function generateConfigFile() {
             },
         },
         i18n: {
+            path: "<your locale directory path>",
             keyStyle: "auto",
         },
         logging: {

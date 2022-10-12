@@ -5,6 +5,12 @@ import log from "loglevel";
 import * as path from "path";
 import { configFilename } from "../utils/constants";
 
+/**
+ * @todo support keyStyle
+ * @todo support locales includes / excludes
+ * @todo support namespace includes / excludes
+ */
+
 class i18nGS {
   protected config: i18nGSConfig;
   protected doc: GoogleSpreadsheet;
@@ -48,6 +54,21 @@ class i18nGS {
     await this.doc.loadInfo();
 
     log.debug("Service account credential verified");
+  }
+
+  private async readSheet(sheetTitle) {
+    const sheet = this.doc.sheetsByTitle[sheetTitle];
+    if (!sheet) return log.error(`Sheet '${sheetTitle}' not found`);
+    const rows = await sheet.getRows();
+    const langKeys = sheet.headerValues.slice(1);
+    let result = {};
+    rows.forEach((row) => {
+      langKeys.forEach((langKey) => {
+        result[langKey] = result[langKey] || {};
+        result[langKey][row.key] = row[langKey] ?? "";
+      });
+    });
+    return result;
   }
 }
 

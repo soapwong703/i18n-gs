@@ -9,7 +9,7 @@
   "license": "MIT",
   "scripts": {
     "watch": "tsc --watch",
-    "build": "tsc"
+    "build": "tsc && chmod u+x ./bin/index.js"
   },
   "dependencies": {
     "commander": "^9.4.1",

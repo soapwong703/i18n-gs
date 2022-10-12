@@ -7,6 +7,7 @@ module.exports = {
     },
   },
   i18n: {
+    path: "./test/locales",
     keyStyle: "auto",
   },
   logging: {

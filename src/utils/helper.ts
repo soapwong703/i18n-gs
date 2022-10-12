@@ -13,6 +13,7 @@ export function generateConfigFile(): i18nGSConfig {
       },
     },
     i18n: {
+      path: "<your locale directory path>",
       keyStyle: "auto",
     },
     logging: {

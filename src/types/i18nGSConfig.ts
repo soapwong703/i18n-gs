@@ -10,6 +10,7 @@ type i18nGSConfig = {
     credential: Credential;
   };
   i18n: {
+    path: string;
     keyStyle: "auto" | "flat" | "nested";
     locales?: {
       includes?: string[];

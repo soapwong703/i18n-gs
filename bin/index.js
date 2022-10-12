@@ -7,6 +7,7 @@ const commander_1 = require("commander");
 const helper_1 = require("./utils/helper");
 const constants_1 = require("./utils/constants");
 const I18nGS_1 = require("./classes/I18nGS");
+const loglevel_1 = require("loglevel");
 commander_1.program
     .command("init")
     .description("Initialize the project with config file")
@@ -20,14 +21,18 @@ commander_1.program
 commander_1.program
     .command("import")
     .description("Import the files from google sheet")
-    .action(() => {
+    .option("-n, --namespace <namespaces...>")
+    .option("-l, --locale <locales...>")
+    .action((options) => {
     const i18nGS = new I18nGS_1.default();
+    loglevel_1.default.debug("namespace:", options.namespace);
+    loglevel_1.default.debug("locale:", options.locale);
 });
-commander_1.program
-    .command("export")
-    .description("Export the files to google sheet")
-    .action(() => {
-    const i18nGS = new I18nGS_1.default();
-});
+// program
+//   .command("export")
+//   .description("Export the files to google sheet")
+//   .action((namespace) => {
+//     const i18nGS = new I18nGS();
+//   });
 commander_1.program.parse();
 //# sourceMappingURL=index.js.map

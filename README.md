@@ -29,3 +29,11 @@ i18n-gs init
 ```
 
 Initialize the project with config file
+
+## Import
+
+```console
+i18n-gs import
+```
+
+Import the files from google sheet

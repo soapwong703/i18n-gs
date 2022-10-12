@@ -5,6 +5,11 @@ const google_spreadsheet_1 = require("google-spreadsheet");
 const loglevel_1 = require("loglevel");
 const path = require("path");
 const constants_1 = require("../utils/constants");
+/**
+ * @todo support keyStyle
+ * @todo support locales includes / excludes
+ * @todo support namespace includes / excludes
+ */
 class i18nGS {
     constructor() {
         this.loadConfig();
@@ -41,6 +46,22 @@ class i18nGS {
         await this.doc.useServiceAccountAuth(credential);
         await this.doc.loadInfo();
         loglevel_1.default.debug("Service account credential verified");
+    }
+    async readSheet(sheetTitle) {
+        const sheet = this.doc.sheetsByTitle[sheetTitle];
+        if (!sheet)
+            return loglevel_1.default.error(`Sheet '${sheetTitle}' not found`);
+        const rows = await sheet.getRows();
+        const langKeys = sheet.headerValues.slice(1);
+        let result = {};
+        rows.forEach((row) => {
+            langKeys.forEach((langKey) => {
+                var _a;
+                result[langKey] = result[langKey] || {};
+                result[langKey][row.key] = (_a = row[langKey]) !== null && _a !== void 0 ? _a : "";
+            });
+        });
+        return result;
     }
 }
 exports.default = i18nGS;
