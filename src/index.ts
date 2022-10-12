@@ -13,8 +13,6 @@ const loadConfig = () => {
   }
 };
 
-// program.option("--first").option("-s, --separator <char>");
-
 program
   .command("init")
   .description("Initialize the project with config file")
