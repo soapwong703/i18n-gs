@@ -1,17 +1,12 @@
 module.exports = {
-  locales: {
-    // include: [],
+  "spreadsheet": {
+    "sheetId": "<your sheet id>",
+    "credential": {
+      "type": "serviceAccount",
+      "path": "<your credential file path>"
+    }
   },
-  sheets: {
-    // include: [],
-  },
-  credential: {
-    // path: "",
-  },
-  logging: {
-    level: "info",
-  },
-  i18n: {
-    keyStyle: "auto",
-  },
-};
+  "i18n": {
+    "keyStyle": "auto"
+  }
+}

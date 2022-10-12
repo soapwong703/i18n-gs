@@ -1,37 +1,31 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
-const { program } = require("commander");
-const { exit } = require("process");
-
-const loadConfig = () => {
-  try {
-    return require(path.resolve("./i18n-gs.config.js"));
-  } catch (err) {
-    program.error("Config file not found!");
-  }
-};
+import * as fs from "fs";
+import * as path from "path";
+import { program } from "commander";
+import { generateConfigFile, getConfig } from "./utils/helper";
+import { configFilename } from "./utils/constants";
 
 program
   .command("init")
   .description("Initialize the project with config file")
   .action(() => {
-    const configFile = fs.existsSync(path.resolve("./i18n-gs.config.js"));
+    const pathname = path.resolve(configFilename);
+    const configFile = fs.existsSync(pathname);
 
-    if (configFile) return program.error("Config file already exist!");
+    if (configFile)
+      return program.error(
+        `A '${configFilename}' file is already defined at: '${pathname}'`
+      );
 
-    fs.copyFileSync(
-      path.resolve(__dirname, "./i18n-gs.config.template.js"),
-      path.resolve("./i18n-gs.config.js")
-    );
+    generateConfigFile();
   });
 
 program
   .command("import")
   .description("Import the files from google sheet")
   .action(() => {
-    const config = loadConfig();
+    const config = getConfig();
     console.log(config);
   });
 
@@ -39,7 +33,7 @@ program
   .command("export")
   .description("Export the files to google sheet")
   .action(() => {
-    const config = loadConfig();
+    const config = getConfig();
     console.log(config);
   });
 

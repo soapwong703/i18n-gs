@@ -1,39 +1,34 @@
 #!/usr/bin/env node
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require("fs");
 const path = require("path");
-const { program } = require("commander");
-const { exit } = require("process");
-const loadConfig = () => {
-    try {
-        return require(path.resolve("./i18n-gs.config.js"));
-    }
-    catch (err) {
-        program.error("Config file not found!");
-    }
-};
-console.log("test");
-program
+const commander_1 = require("commander");
+const helper_1 = require("./utils/helper");
+const constants_1 = require("./utils/constants");
+commander_1.program
     .command("init")
     .description("Initialize the project with config file")
     .action(() => {
-    const configFile = fs.existsSync(path.resolve("./i18n-gs.config.js"));
+    const pathname = path.resolve(constants_1.configFilename);
+    const configFile = fs.existsSync(pathname);
     if (configFile)
-        return program.error("Config file already exist!");
-    fs.copyFileSync(path.resolve(__dirname, "./i18n-gs.config.template.js"), path.resolve("./i18n-gs.config.js"));
+        return commander_1.program.error(`A '${constants_1.configFilename}' file is already defined at: '${pathname}'`);
+    (0, helper_1.generateConfigFile)();
 });
-program
+commander_1.program
     .command("import")
     .description("Import the files from google sheet")
     .action(() => {
-    const config = loadConfig();
+    const config = (0, helper_1.getConfig)();
     console.log(config);
 });
-program
+commander_1.program
     .command("export")
     .description("Export the files to google sheet")
     .action(() => {
-    const config = loadConfig();
+    const config = (0, helper_1.getConfig)();
     console.log(config);
 });
-program.parse();
+commander_1.program.parse();
 //# sourceMappingURL=index.js.map
