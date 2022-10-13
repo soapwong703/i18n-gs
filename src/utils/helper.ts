@@ -27,3 +27,20 @@ export function generateConfigFile(): i18nGSConfig {
   );
   return;
 }
+
+export function extractGoogleSheetError(err) {
+  if (!err?.response?.data?.error) return "";
+
+  const {
+    code,
+    message,
+    status,
+  }: {
+    code: number;
+    message: string;
+    status: string;
+    details: Record<string, any>[];
+  } = err?.response?.data?.error;
+
+  return `[GoogleAPIError:${code}] ${message}`;
+}

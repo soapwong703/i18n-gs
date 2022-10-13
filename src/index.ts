@@ -24,14 +24,19 @@ program
   });
 
 program
-  .command("import")
+  .command("import [namespace...]")
   .description("Import the files from google sheet")
-  .option("-n, --namespace <namespaces...>")
   .option("-l, --locale <locales...>")
-  .action((options) => {
+  .action(async (namespace, options) => {
     const i18nGS = new I18nGS();
-    log.debug("namespace:", options.namespace);
-    log.debug("locale:", options.locale);
+    log.debug("namespace:", namespace);
+    log.debug("--locale:", options.locale);
+
+    await i18nGS.connect();
+    const sheets = await i18nGS.readSheets(namespace, options.locale);
+
+    // log.debug(sheets);
+    log.info(`Finished importing ${Object.keys(sheets).length} sheets`);
   });
 
 // program

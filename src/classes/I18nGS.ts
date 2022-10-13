@@ -3,6 +3,7 @@ import { GoogleSpreadsheet } from "google-spreadsheet";
 import i18nGSConfig from "i18nGSConfig";
 import log from "loglevel";
 import * as path from "path";
+import { extractGoogleSheetError } from "../utils/helper";
 import { configFilename } from "../utils/constants";
 
 /**
@@ -24,10 +25,12 @@ class i18nGS {
     else log.setLevel(logLevel, false);
 
     log.debug("Loaded config file:", this.config);
+  }
 
+  async connect() {
     switch (this.config.spreadsheet.credential.type) {
       case "serviceAccount":
-        this.connectWithServiceAccount();
+        await this.connectWithServiceAccount();
     }
   }
 
@@ -56,19 +59,61 @@ class i18nGS {
     log.debug("Service account credential verified");
   }
 
-  private async readSheet(sheetTitle) {
-    const sheet = this.doc.sheetsByTitle[sheetTitle];
-    if (!sheet) return log.error(`Sheet '${sheetTitle}' not found`);
-    const rows = await sheet.getRows();
-    const langKeys = sheet.headerValues.slice(1);
-    let result = {};
-    rows.forEach((row) => {
-      langKeys.forEach((langKey) => {
-        result[langKey] = result[langKey] || {};
-        result[langKey][row.key] = row[langKey] ?? "";
+  async readSheet(namespace: string, _locales?: string[]) {
+    const sheet = this.doc.sheetsByTitle[namespace];
+    if (!sheet) return log.error(`Sheet '${namespace}' not found`);
+
+    try {
+      const rows = await sheet.getRows();
+
+      const locales = (_locales ?? sheet.headerValues.slice(1) ?? []).filter(
+        (locale) => !this.config?.i18n?.locales?.excludes?.includes(locale)
+      );
+      if (locales.length === 0)
+        return log.error(`No locale available in ${namespace}`);
+
+      log.info(`Loading sheet '${namespace}' with locale '${locales}'`);
+      let result = {};
+      rows.forEach((row) => {
+        locales.forEach((langKey) => {
+          result[langKey] = result[langKey] || {};
+          result[langKey][row.key] = row[langKey] ?? "";
+        });
       });
-    });
-    return result;
+      return result;
+    } catch (err) {
+      log.error(`Error while loading sheet '${namespace}'!`);
+      if (!!extractGoogleSheetError(err))
+        program.error(extractGoogleSheetError(err));
+      program.error(err);
+    }
+  }
+
+  async readSheets(_namespaces: string[], _locales?: string[]) {
+    const namespaces = (
+      _namespaces?.length > 0
+        ? _namespaces
+        : this.config?.i18n?.namespaces?.includes ??
+          Object.keys(this.doc.sheetsByTitle) ??
+          []
+    ).filter(
+      (namespace) =>
+        !this.config?.i18n?.namespaces?.excludes?.includes(namespace)
+    );
+
+    log.debug("Selected namespaces:", namespaces);
+
+    if (namespaces.length === 0)
+      program.error("There is no selected namespace!");
+
+    const objBySheet = {};
+
+    for (const namespace of namespaces) {
+      const sheet = await this.readSheet(namespace, _locales);
+      objBySheet[namespace] = sheet;
+    }
+
+    return objBySheet;
   }
 }
 

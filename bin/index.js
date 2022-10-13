@@ -19,14 +19,17 @@ commander_1.program
     (0, helper_1.generateConfigFile)();
 });
 commander_1.program
-    .command("import")
+    .command("import [namespace...]")
     .description("Import the files from google sheet")
-    .option("-n, --namespace <namespaces...>")
     .option("-l, --locale <locales...>")
-    .action((options) => {
+    .action(async (namespace, options) => {
     const i18nGS = new I18nGS_1.default();
-    loglevel_1.default.debug("namespace:", options.namespace);
-    loglevel_1.default.debug("locale:", options.locale);
+    loglevel_1.default.debug("namespace:", namespace);
+    loglevel_1.default.debug("--locale:", options.locale);
+    await i18nGS.connect();
+    const sheets = await i18nGS.readSheets(namespace, options.locale);
+    // log.debug(sheets);
+    loglevel_1.default.info(`Finished importing ${Object.keys(sheets).length} sheets`);
 });
 // program
 //   .command("export")
