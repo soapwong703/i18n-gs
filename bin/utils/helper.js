@@ -1,10 +1,55 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.extractGoogleSheetError = exports.generateConfigFile = void 0;
+exports.initConfig = exports.extractGoogleSheetError = exports.generateConfigFile = exports.removeEmptyProperty = exports.mergeDeep = exports.isObject = void 0;
 const constants_1 = require("./constants");
+const path = require("path");
 const fs = require("fs");
+const loglevel_1 = require("loglevel");
+/**
+ * Simple object check.
+ * @param item
+ * @returns {boolean}
+ */
+function isObject(item) {
+    return item && typeof item === "object" && !Array.isArray(item);
+}
+exports.isObject = isObject;
+/**
+ * Deep merge two objects.
+ * @param target
+ * @param ...sources
+ */
+function mergeDeep(target, ...sources) {
+    if (!sources.length)
+        return target;
+    const source = sources.shift();
+    if (isObject(target) && isObject(source)) {
+        for (const key in source) {
+            if (isObject(source[key])) {
+                if (!target[key])
+                    Object.assign(target, { [key]: {} });
+                mergeDeep(target[key], source[key]);
+            }
+            else {
+                Object.assign(target, { [key]: source[key] });
+            }
+        }
+    }
+    return mergeDeep(target, ...sources);
+}
+exports.mergeDeep = mergeDeep;
+function removeEmptyProperty(obj) {
+    // mutate target obj
+    Object.keys(obj).forEach((key) => {
+        if (obj[key] === undefined)
+            delete obj[key];
+        if (typeof obj[key] === "object")
+            removeEmptyProperty(obj[key]);
+    });
+}
+exports.removeEmptyProperty = removeEmptyProperty;
 function generateConfigFile() {
-    const template = {
+    const configTemplate = {
         spreadsheet: {
             sheetId: "<your sheet id>",
             credential: {
@@ -20,7 +65,7 @@ function generateConfigFile() {
             level: "info",
         },
     };
-    fs.writeFileSync(constants_1.configFilename, "module.exports = " + JSON.stringify(template, null, 2));
+    fs.writeFileSync(constants_1.configFilename, "module.exports = " + JSON.stringify(configTemplate, null, 2));
     return;
 }
 exports.generateConfigFile = generateConfigFile;
@@ -32,4 +77,19 @@ function extractGoogleSheetError(err) {
     return `[GoogleAPIError:${code}] ${message}`;
 }
 exports.extractGoogleSheetError = extractGoogleSheetError;
+function initConfig(inlineConfig) {
+    const pathname = path.resolve(constants_1.configFilename);
+    const fileConfig = require(pathname);
+    const config = constants_1.baseConfig;
+    // TODO verify configfile
+    if (initConfig)
+        mergeDeep(config, fileConfig, inlineConfig);
+    const { logging: { level }, } = config;
+    if (level === "none")
+        loglevel_1.default.setLevel("silent", false);
+    else
+        loglevel_1.default.setLevel(level, false);
+    return config;
+}
+exports.initConfig = initConfig;
 //# sourceMappingURL=helper.js.map

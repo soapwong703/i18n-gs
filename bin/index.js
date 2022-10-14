@@ -21,14 +21,29 @@ commander_1.program
 commander_1.program
     .command("import [namespace...]")
     .description("Import the files from google sheet")
-    .option("-l, --locale <locales...>")
+    .option("-l, --locales <locales...>")
     .action(async (namespace, options) => {
-    const i18nGS = new I18nGS_1.default();
+    const inlineConfig = {
+        i18n: {
+            namespaces: {
+                includes: namespace.length > 0 ? namespace : undefined,
+            },
+            locales: {
+                includes: options.locales,
+            },
+        },
+    };
+    (0, helper_1.removeEmptyProperty)(inlineConfig);
+    const config = (0, helper_1.initConfig)(inlineConfig);
     loglevel_1.default.debug("namespace:", namespace);
-    loglevel_1.default.debug("--locale:", options.locale);
+    loglevel_1.default.debug("--locale:", options.locales);
+    loglevel_1.default.debug("Loaded config file:", config);
+    const i18nGS = new I18nGS_1.default(config);
     try {
         await i18nGS.connect();
-        const sheets = await i18nGS.readSheets(namespace, options.locale);
+        const sheets = await i18nGS.readSheets();
+        if (Object.values(sheets).length === 0)
+            commander_1.program.error(`No sheets available for import!`);
         i18nGS.writeFiles(sheets);
         // log.debug(sheets);
         loglevel_1.default.info(`Finished importing ${Object.keys(sheets).length} sheets`);

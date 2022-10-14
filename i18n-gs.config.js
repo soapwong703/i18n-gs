@@ -10,12 +10,12 @@ module.exports = {
     path: "./test/locales",
     keyStyle: "nested",
     namespaces: {
-      includes: ["activity"],
-      // excludes: ["c"],
+      // includes: ["activity"],
+      excludes: ["activity"],
     },
     locales: {
       // includes: ["zh-HK", "zh-CN", "en-US"],
-      // excludes: ["en-US"],
+      excludes: ["en-US"],
     },
   },
   logging: {

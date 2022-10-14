@@ -4,8 +4,6 @@ import i18nGSConfig from "i18nGSConfig";
 import log from "loglevel";
 import * as path from "path";
 import * as fs from "fs-extra";
-import { extractGoogleSheetError } from "../utils/helper";
-import { configFilename } from "../utils/constants";
 import { NamespaceData, SheetsData } from "i18nGSData";
 
 const unflatten = require("flat").unflatten;
@@ -20,30 +18,15 @@ class i18nGS {
   protected config: i18nGSConfig;
   protected doc: GoogleSpreadsheet;
 
-  constructor() {
-    this.loadConfig();
+  constructor(config) {
+    this.config = config;
     this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId);
-
-    const logLevel = this.config.logging.level;
-    if (logLevel === "none") log.setLevel("silent", false);
-    else log.setLevel(logLevel, false);
-
-    log.debug("Loaded config file:", this.config);
   }
 
   async connect() {
     switch (this.config.spreadsheet.credential.type) {
       case "serviceAccount":
         await this.connectWithServiceAccount();
-    }
-  }
-
-  private loadConfig() {
-    const pathname = path.resolve(configFilename);
-    try {
-      this.config = require(pathname);
-    } catch (err) {
-      program.error(`Cannot not find a config file at: '${pathname}'`);
     }
   }
 
@@ -63,10 +46,7 @@ class i18nGS {
     log.debug("Service account credential verified");
   }
 
-  async readSheet(
-    namespace: string,
-    _locales?: string[]
-  ): Promise<NamespaceData> {
+  async readSheet(namespace: string): Promise<NamespaceData> {
     const sheet = this.doc.sheetsByTitle[namespace];
     if (!sheet) {
       log.error(`Sheet '${namespace}' not found`);
@@ -75,7 +55,11 @@ class i18nGS {
 
     const rows = await sheet.getRows();
 
-    const locales = (_locales ?? sheet.headerValues.slice(1) ?? []).filter(
+    const locales = (
+      this.config?.i18n?.locales?.includes ??
+      sheet.headerValues.slice(1) ??
+      []
+    ).filter(
       (locale) => !this.config?.i18n?.locales?.excludes?.includes(locale)
     );
     if (locales.length === 0) {
@@ -94,16 +78,11 @@ class i18nGS {
     return result;
   }
 
-  async readSheets(
-    _namespaces: string[],
-    _locales?: string[]
-  ): Promise<SheetsData> {
+  async readSheets(): Promise<SheetsData> {
     const namespaces = (
-      _namespaces?.length > 0
-        ? _namespaces
-        : this.config?.i18n?.namespaces?.includes ??
-          Object.keys(this.doc.sheetsByTitle) ??
-          []
+      this.config?.i18n?.namespaces?.includes ??
+      Object.keys(this.doc.sheetsByTitle) ??
+      []
     ).filter(
       (namespace) =>
         !this.config?.i18n?.namespaces?.excludes?.includes(namespace)
@@ -117,8 +96,8 @@ class i18nGS {
     const objBySheet = {};
 
     for (const namespace of namespaces) {
-      const sheet = await this.readSheet(namespace, _locales);
-      objBySheet[namespace] = sheet;
+      const sheet = await this.readSheet(namespace);
+      if (sheet) objBySheet[namespace] = sheet;
     }
 
     return objBySheet;
@@ -150,8 +129,9 @@ class i18nGS {
       // if no namespace file, make file
       if (!fs.existsSync(`${path}/${locale}/${namespace}.json`))
         console.log(`creating ${path}/${locale}/${namespace}.json`);
-      // update namespace file, overwrite all data
       else console.log(`updating ${path}/${locale}/${namespace}.json`);
+
+      // update namespace file, overwrite all data
       fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
         spaces: 2,
       });

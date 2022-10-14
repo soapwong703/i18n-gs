@@ -3,10 +3,17 @@
 import * as fs from "fs";
 import * as path from "path";
 import { program } from "commander";
-import { extractGoogleSheetError, generateConfigFile } from "./utils/helper";
+import {
+  extractGoogleSheetError,
+  generateConfigFile,
+  initConfig,
+  removeEmptyProperty,
+} from "./utils/helper";
 import { configFilename } from "./utils/constants";
 import I18nGS from "./classes/I18nGS";
 import log from "loglevel";
+import i18nGSConfig from "i18nGSConfig";
+import { DeepPartial } from "DeepPartial";
 
 program
   .command("init")
@@ -26,15 +33,31 @@ program
 program
   .command("import [namespace...]")
   .description("Import the files from google sheet")
-  .option("-l, --locale <locales...>")
+  .option("-l, --locales <locales...>")
   .action(async (namespace, options) => {
-    const i18nGS = new I18nGS();
+    const inlineConfig: DeepPartial<i18nGSConfig> = {
+      i18n: {
+        namespaces: {
+          includes: namespace.length > 0 ? namespace : undefined,
+        },
+        locales: {
+          includes: options.locales,
+        },
+      },
+    };
+    removeEmptyProperty(inlineConfig);
+    const config = initConfig(inlineConfig);
     log.debug("namespace:", namespace);
-    log.debug("--locale:", options.locale);
+    log.debug("--locale:", options.locales);
+    log.debug("Loaded config file:", config);
 
+    const i18nGS = new I18nGS(config);
     try {
       await i18nGS.connect();
-      const sheets = await i18nGS.readSheets(namespace, options.locale);
+      const sheets = await i18nGS.readSheets();
+      if (Object.values(sheets).length === 0)
+        program.error(`No sheets available for import!`);
+
       i18nGS.writeFiles(sheets);
 
       // log.debug(sheets);
