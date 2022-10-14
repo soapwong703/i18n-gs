@@ -8,10 +8,11 @@ module.exports = {
   },
   i18n: {
     path: "./test/locales",
-    keyStyle: "auto",
-    // namespaces: {
-    //   excludes: ["c"],
-    // },
+    keyStyle: "nested",
+    namespaces: {
+      includes: ["activity"],
+      // excludes: ["c"],
+    },
     locales: {
       // includes: ["zh-HK", "zh-CN", "en-US"],
       // excludes: ["en-US"],

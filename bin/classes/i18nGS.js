@@ -4,8 +4,9 @@ const commander_1 = require("commander");
 const google_spreadsheet_1 = require("google-spreadsheet");
 const loglevel_1 = require("loglevel");
 const path = require("path");
-const helper_1 = require("../utils/helper");
+const fs = require("fs-extra");
 const constants_1 = require("../utils/constants");
+const unflatten = require("flat").unflatten;
 /**
  * @todo support keyStyle
  * @todo support locales includes / excludes
@@ -53,30 +54,26 @@ class i18nGS {
     async readSheet(namespace, _locales) {
         var _a;
         const sheet = this.doc.sheetsByTitle[namespace];
-        if (!sheet)
-            return loglevel_1.default.error(`Sheet '${namespace}' not found`);
-        try {
-            const rows = await sheet.getRows();
-            const locales = ((_a = _locales !== null && _locales !== void 0 ? _locales : sheet.headerValues.slice(1)) !== null && _a !== void 0 ? _a : []).filter((locale) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(locale)); });
-            if (locales.length === 0)
-                return loglevel_1.default.error(`No locale available in ${namespace}`);
-            loglevel_1.default.info(`Loading sheet '${namespace}' with locale '${locales}'`);
-            let result = {};
-            rows.forEach((row) => {
-                locales.forEach((langKey) => {
-                    var _a;
-                    result[langKey] = result[langKey] || {};
-                    result[langKey][row.key] = (_a = row[langKey]) !== null && _a !== void 0 ? _a : "";
-                });
+        if (!sheet) {
+            loglevel_1.default.error(`Sheet '${namespace}' not found`);
+            return undefined;
+        }
+        const rows = await sheet.getRows();
+        const locales = ((_a = _locales !== null && _locales !== void 0 ? _locales : sheet.headerValues.slice(1)) !== null && _a !== void 0 ? _a : []).filter((locale) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(locale)); });
+        if (locales.length === 0) {
+            loglevel_1.default.error(`No locale available in ${namespace}`);
+            return undefined;
+        }
+        loglevel_1.default.info(`Loading sheet '${namespace}' with locale '${locales}'`);
+        let result = {};
+        rows.forEach((row) => {
+            locales.forEach((langKey) => {
+                var _a;
+                result[langKey] = result[langKey] || {};
+                result[langKey][row.key] = (_a = row[langKey]) !== null && _a !== void 0 ? _a : "";
             });
-            return result;
-        }
-        catch (err) {
-            loglevel_1.default.error(`Error while loading sheet '${namespace}'!`);
-            if (!!(0, helper_1.extractGoogleSheetError)(err))
-                commander_1.program.error((0, helper_1.extractGoogleSheetError)(err));
-            commander_1.program.error(err);
-        }
+        });
+        return result;
     }
     async readSheets(_namespaces, _locales) {
         var _a, _b, _c, _d, _e;
@@ -92,6 +89,40 @@ class i18nGS {
             objBySheet[namespace] = sheet;
         }
         return objBySheet;
+    }
+    writeFile(namespaceData, namespace) {
+        Object.keys(namespaceData).forEach((locale) => {
+            var _a, _b;
+            // TODO maybe support command option
+            const keyStyle = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.keyStyle;
+            let i18n = undefined;
+            switch (keyStyle) {
+                case "flat":
+                    i18n = namespaceData[locale];
+                    break;
+                case "nested":
+                default:
+                    i18n = unflatten(namespaceData[locale], { object: true });
+                    break;
+            }
+            // TODO support command option
+            const path = this.config.i18n.path;
+            // if no folder, make folder
+            if (!fs.existsSync(`${path}/${locale}`))
+                fs.mkdirSync(`${path}/${locale}`, { recursive: true });
+            // if no namespace file, make file
+            if (!fs.existsSync(`${path}/${locale}/${namespace}.json`))
+                console.log(`creating ${path}/${locale}/${namespace}.json`);
+            // update namespace file, overwrite all data
+            else
+                console.log(`updating ${path}/${locale}/${namespace}.json`);
+            fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
+                spaces: 2,
+            });
+        });
+    }
+    writeFiles(data) {
+        Object.entries(data).forEach(([namespace, namespaceData]) => this.writeFile(namespaceData, namespace));
     }
 }
 exports.default = i18nGS;

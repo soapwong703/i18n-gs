@@ -3,7 +3,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { program } from "commander";
-import { generateConfigFile } from "./utils/helper";
+import { extractGoogleSheetError, generateConfigFile } from "./utils/helper";
 import { configFilename } from "./utils/constants";
 import I18nGS from "./classes/I18nGS";
 import log from "loglevel";
@@ -32,11 +32,19 @@ program
     log.debug("namespace:", namespace);
     log.debug("--locale:", options.locale);
 
-    await i18nGS.connect();
-    const sheets = await i18nGS.readSheets(namespace, options.locale);
+    try {
+      await i18nGS.connect();
+      const sheets = await i18nGS.readSheets(namespace, options.locale);
+      i18nGS.writeFiles(sheets);
 
-    // log.debug(sheets);
-    log.info(`Finished importing ${Object.keys(sheets).length} sheets`);
+      // log.debug(sheets);
+      log.info(`Finished importing ${Object.keys(sheets).length} sheets`);
+    } catch (err) {
+      log.error(`Import failed!`);
+      if (!!extractGoogleSheetError(err))
+        return program.error(extractGoogleSheetError(err));
+      return program.error(err);
+    }
   });
 
 // program
