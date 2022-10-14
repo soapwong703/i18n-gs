@@ -85,10 +85,10 @@ function initConfig(inlineConfig) {
     if (initConfig)
         mergeDeep(config, fileConfig, inlineConfig);
     const { logging: { level }, } = config;
-    if (level === "none")
-        loglevel_1.default.setLevel("silent", false);
-    else
+    if (loglevel_1.default.levels[level] !== undefined)
         loglevel_1.default.setLevel(level, false);
+    else
+        loglevel_1.default.setLevel(constants_1.baseConfig.logging.level, false);
     return config;
 }
 exports.initConfig = initConfig;

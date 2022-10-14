@@ -22,7 +22,7 @@ type i18nGSConfig = {
     };
   };
   logging?: {
-    level: "none" | "error" | "warn" | "info" | "debug";
+    level: "silent" | "error" | "warn" | "info" | "debug";
   };
 };
 

@@ -7,7 +7,7 @@ type i18nRecord = { [key: string]: i18nData };
 type i18nData = string | i18nRecord;
 
 export type NamespaceData = {
-  [locale: string]: Record<string, i18nRecord>;
+  [locale: string]: i18nRecord;
 };
 
 export type SheetsData = {

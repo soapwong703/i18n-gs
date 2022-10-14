@@ -31,14 +31,14 @@ program
   });
 
 program
-  .command("import [namespace...]")
+  .command("import [namespaces...]")
   .description("Import the files from google sheet")
   .option("-l, --locales <locales...>")
-  .action(async (namespace, options) => {
+  .action(async (namespaces, options) => {
     const inlineConfig: DeepPartial<i18nGSConfig> = {
       i18n: {
         namespaces: {
-          includes: namespace.length > 0 ? namespace : undefined,
+          includes: namespaces.length > 0 ? namespaces : undefined,
         },
         locales: {
           includes: options.locales,
@@ -47,7 +47,7 @@ program
     };
     removeEmptyProperty(inlineConfig);
     const config = initConfig(inlineConfig);
-    log.debug("namespace:", namespace);
+    log.debug("namespace:", namespaces);
     log.debug("--locale:", options.locales);
     log.debug("Loaded config file:", config);
 
@@ -70,11 +70,41 @@ program
     }
   });
 
-// program
-//   .command("export")
-//   .description("Export the files to google sheet")
-//   .action((namespace) => {
-//     const i18nGS = new I18nGS();
-//   });
+program
+  .command("export [namespaces...]")
+  .description("Export the files to google sheet")
+  .option("-l, --locales <locales...>")
+  .action(async (namespaces, options) => {
+    const inlineConfig: DeepPartial<i18nGSConfig> = {
+      i18n: {
+        namespaces: {
+          includes: namespaces.length > 0 ? namespaces : undefined,
+        },
+        locales: {
+          includes: options.locales,
+        },
+      },
+    };
+    removeEmptyProperty(inlineConfig);
+    const config = initConfig(inlineConfig);
+    log.debug("namespace:", namespaces);
+    log.debug("--locale:", options.locales);
+    log.debug("Loaded config file:", config);
+
+    const i18nGS = new I18nGS(config);
+    try {
+      await i18nGS.connect();
+
+      const sheetsData = await i18nGS.readFiles();
+      await i18nGS.upsertAllSheets(sheetsData);
+
+      log.info(`Finished exporting ${Object.keys(sheetsData).length} sheets`);
+    } catch (err) {
+      log.error(`Export failed!`);
+      if (!!extractGoogleSheetError(err))
+        return program.error(extractGoogleSheetError(err));
+      return program.error(err);
+    }
+  });
 
 program.parse();

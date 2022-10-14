@@ -101,8 +101,8 @@ export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
     logging: { level },
   } = config;
 
-  if (level === "none") log.setLevel("silent", false);
-  else log.setLevel(level, false);
+  if (log.levels[level] !== undefined) log.setLevel(level, false);
+  else log.setLevel(baseConfig.logging.level, false);
 
   return config;
 }

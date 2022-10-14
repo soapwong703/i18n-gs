@@ -19,14 +19,14 @@ commander_1.program
     (0, helper_1.generateConfigFile)();
 });
 commander_1.program
-    .command("import [namespace...]")
+    .command("import [namespaces...]")
     .description("Import the files from google sheet")
     .option("-l, --locales <locales...>")
-    .action(async (namespace, options) => {
+    .action(async (namespaces, options) => {
     const inlineConfig = {
         i18n: {
             namespaces: {
-                includes: namespace.length > 0 ? namespace : undefined,
+                includes: namespaces.length > 0 ? namespaces : undefined,
             },
             locales: {
                 includes: options.locales,
@@ -35,7 +35,7 @@ commander_1.program
     };
     (0, helper_1.removeEmptyProperty)(inlineConfig);
     const config = (0, helper_1.initConfig)(inlineConfig);
-    loglevel_1.default.debug("namespace:", namespace);
+    loglevel_1.default.debug("namespace:", namespaces);
     loglevel_1.default.debug("--locale:", options.locales);
     loglevel_1.default.debug("Loaded config file:", config);
     const i18nGS = new I18nGS_1.default(config);
@@ -55,11 +55,39 @@ commander_1.program
         return commander_1.program.error(err);
     }
 });
-// program
-//   .command("export")
-//   .description("Export the files to google sheet")
-//   .action((namespace) => {
-//     const i18nGS = new I18nGS();
-//   });
+commander_1.program
+    .command("export [namespaces...]")
+    .description("Export the files to google sheet")
+    .option("-l, --locales <locales...>")
+    .action(async (namespaces, options) => {
+    const inlineConfig = {
+        i18n: {
+            namespaces: {
+                includes: namespaces.length > 0 ? namespaces : undefined,
+            },
+            locales: {
+                includes: options.locales,
+            },
+        },
+    };
+    (0, helper_1.removeEmptyProperty)(inlineConfig);
+    const config = (0, helper_1.initConfig)(inlineConfig);
+    loglevel_1.default.debug("namespace:", namespaces);
+    loglevel_1.default.debug("--locale:", options.locales);
+    loglevel_1.default.debug("Loaded config file:", config);
+    const i18nGS = new I18nGS_1.default(config);
+    try {
+        await i18nGS.connect();
+        const sheetsData = await i18nGS.readFiles();
+        await i18nGS.upsertAllSheets(sheetsData);
+        loglevel_1.default.info(`Finished exporting ${Object.keys(sheetsData).length} sheets`);
+    }
+    catch (err) {
+        loglevel_1.default.error(`Export failed!`);
+        if (!!(0, helper_1.extractGoogleSheetError)(err))
+            return commander_1.program.error((0, helper_1.extractGoogleSheetError)(err));
+        return commander_1.program.error(err);
+    }
+});
 commander_1.program.parse();
 //# sourceMappingURL=index.js.map

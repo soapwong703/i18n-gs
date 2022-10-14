@@ -6,7 +6,7 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import { NamespaceData, SheetsData } from "i18nGSData";
 
-const unflatten = require("flat").unflatten;
+const { unflatten, flatten } = require("flat");
 
 /**
  * @todo support keyStyle
@@ -21,6 +21,14 @@ class i18nGS {
   constructor(config) {
     this.config = config;
     this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId);
+
+    if (this.config?.i18n?.namespaces?.excludes)
+      log.info(
+        `Excluding namespaces:`,
+        this.config?.i18n?.namespaces?.excludes
+      );
+    if (this.config?.i18n?.locales?.excludes)
+      log.info(`Excluding locales:`, this.config?.i18n?.locales?.excludes);
   }
 
   async connect() {
@@ -128,8 +136,8 @@ class i18nGS {
 
       // if no namespace file, make file
       if (!fs.existsSync(`${path}/${locale}/${namespace}.json`))
-        console.log(`creating ${path}/${locale}/${namespace}.json`);
-      else console.log(`updating ${path}/${locale}/${namespace}.json`);
+        log.info(`creating ${path}/${locale}/${namespace}.json`);
+      else log.info(`updating ${path}/${locale}/${namespace}.json`);
 
       // update namespace file, overwrite all data
       fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
@@ -142,6 +150,150 @@ class i18nGS {
     Object.entries(data).forEach(([namespace, namespaceData]) =>
       this.writeFile(namespaceData, namespace)
     );
+  }
+
+  readFile(path) {
+    try {
+      const data = fs.readJsonSync(path);
+      return flatten(data);
+    } catch (err) {
+      log.error(`Fail to open ${path}`);
+    }
+  }
+
+  async readFiles(): Promise<SheetsData> {
+    const {
+      i18n: {
+        path,
+        namespaces: {
+          includes: _namespacesIncludes,
+          excludes: _namespacesExcludes,
+        },
+        locales: { includes: _localesIncludes, excludes: _localesExcludes },
+      },
+    } = this.config;
+    if (!fs.existsSync(path)) throw new Error(`Path '${path}' does not exist`);
+
+    const sheetsData = {};
+    const locales = (
+      _localesIncludes ??
+      (await fs.readdirSync(path).filter((file) => !file.startsWith(".")))
+    ).filter((locale) => !_localesExcludes?.includes(locale));
+
+    if (locales.length === 0) program.error("There is no selected locales!");
+
+    locales.forEach((locale) => {
+      const extReg = /\.\w+/g;
+      const files = fs
+        .readdirSync(`${path}/${locale}`)
+        .filter((file) => !file.startsWith("."));
+
+      const namespaces = (
+        _namespacesIncludes ??
+        files.map((filename) => filename.replace(extReg, ""))
+      ).filter((namespace) => !_namespacesExcludes?.includes(namespace));
+
+      log.debug(`Selected namespaces in '${locale}':`, namespaces);
+
+      if (namespaces.length === 0)
+        log.error(`There is no available namespace in '${locale}'`);
+
+      namespaces.forEach((namespace) => {
+        log.info(`Loading namespace '${namespace}' in '${locale}'`);
+        const data = this.readFile(`${path}/${locale}/${namespace}.json`);
+        if (!data) return;
+        sheetsData[namespace] = sheetsData[namespace] || {};
+        Object.entries(data).forEach(([key, value]) => {
+          sheetsData[namespace][locale] = sheetsData[namespace][locale] || {};
+          sheetsData[namespace][locale][key] = value;
+        });
+      });
+    });
+
+    return sheetsData;
+  }
+
+  async upsertAllSheets(i18n: SheetsData) {
+    for await (const [namespace, data] of Object.entries(i18n)) {
+      const locales = Object.keys(data);
+
+      const newHeaderColumn = ["key", ...locales];
+      if (!this.doc.sheetsByTitle?.[namespace]) {
+        await this.doc.addSheet({
+          title: namespace,
+          headerValues: newHeaderColumn,
+        });
+        log.info(`Created sheet '${namespace}'`);
+      }
+      log.info(`Exporting to sheet '${namespace}'`);
+      const sheet = this.doc.sheetsByTitle[namespace];
+
+      await sheet.loadHeaderRow().catch(async () => {
+        // if no header row, assume sheet is empty
+        await sheet.setHeaderRow(newHeaderColumn);
+      });
+
+      if (sheet.headerValues[0] !== "key")
+        program.error(
+          `Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`
+        );
+
+      newHeaderColumn.forEach((col) => {
+        log.debug(`Checking header column '${col}' is exist`);
+        if (!sheet.headerValues.includes(col))
+          program.error(
+            `Header '${col}' not found! Please include it in the sheet and try again`
+          );
+      });
+
+      await sheet.loadCells();
+      const rows = await sheet.getRows();
+
+      // update existing keys
+      let updatedCells = 0;
+      for await (const row of rows) {
+        for (const lang in data) {
+          if (!data?.[lang]?.[row.key]) continue;
+          const columnIndex = sheet.headerValues.findIndex(
+            (col) => col === lang
+          );
+          const cell = await sheet.getCell(row.rowIndex - 1, columnIndex);
+          if (cell.value !== data[lang][row.key]) {
+            if (cell.value === null && !data[lang][row.key]) continue;
+            log.debug(`Updating ${namespace}/${row.key}/${lang}`);
+            cell.value = (data[lang][row.key] as string) ?? "";
+            updatedCells++;
+          }
+          delete data[lang][row.key];
+        }
+      }
+      if (updatedCells > 0) await sheet.saveUpdatedCells();
+      log.info(`Sheet '${namespace}' has updated ${updatedCells} cells`);
+
+      // append non-existing key
+      const appendObject: { [key: string]: { [locale: string]: string } } =
+        Object.entries(data).reduce((acc, [locale, record]) => {
+          Object.entries(record).forEach(([key, value]) => {
+            acc[key] = acc[key] || {};
+            acc[key][locale] = value;
+          });
+          return acc;
+        }, {});
+      const appendArray = Object.entries(appendObject).map(([key, value]) => ({
+        key,
+        ...value,
+      }));
+
+      if (appendArray.length > 0)
+        await sheet.addRows(appendArray).then(() => {
+          if (log.getLevel() <= log.levels.DEBUG)
+            appendArray.forEach((col) =>
+              log.debug(`Appended row '${col.key}' to '${namespace}'`)
+            );
+        });
+
+      log.info(`Sheet '${namespace}' has appended ${appendArray.length} rows`);
+    }
   }
 }
 

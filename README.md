@@ -37,3 +37,11 @@ i18n-gs import
 ```
 
 Import the files from google sheet
+
+## Export
+
+```console
+i18n-gs export
+```
+
+Export the files to google sheet (only support flat key style)
