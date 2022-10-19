@@ -2,13 +2,13 @@
   "name": "i18n-gs",
   "version": "0.0.1",
   "description": "Support Google Sheets push and fetch into i18n json file.",
-  "main": "bin/index.js",
+  "main": "dist/index.js",
   "bin": {
-    "i18ngs": "bin/index.js",
-    "i18n-gs": "bin/index.js"
+    "i18ngs": "dist/index.js",
+    "i18n-gs": "dist/index.js"
   },
   "files": [
-    "bin",
+    "dist",
     "src"
   ],
   "repository": "https://github.com/soapwong703/i18n-gs.git",
@@ -16,13 +16,14 @@
   "license": "MIT",
   "scripts": {
     "watch": "tsc --watch",
-    "build": "tsc && chmod u+x ./bin/index.js"
+    "build": "tsc && chmod u+x ./dist/index.js"
   },
   "dependencies": {
     "commander": "^9.4.1",
     "flat": "^5.0.2",
     "fs-extra": "^10.1.0",
     "google-spreadsheet": "^3.3.0",
+    "joi": "^17.6.3",
     "loglevel": "^1.8.0"
   },
   "devDependencies": {
