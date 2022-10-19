@@ -1,4 +1,8 @@
 node_modules
+
+# i18n-gs configs
 credential.json
-test/locales
 i18n-gs.config.js
+
+# test files
+test/*/**

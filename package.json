@@ -4,7 +4,8 @@
   "description": "Support Google Sheets push and fetch into i18n json file.",
   "main": "bin/index.js",
   "bin": {
-    "i18ngs": "bin/index.js"
+    "i18ngs": "bin/index.js",
+    "i18n-gs": "bin/index.js"
   },
   "files": [
     "bin",
