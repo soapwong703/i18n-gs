@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateConfig = void 0;
 const i18nGSConfig_1 = require("../types/i18nGSConfig");
 const Joi = require("joi");
-const commander_1 = require("commander");
+const log_1 = require("./log");
 function validateConfig(config) {
     const schema = Joi.object({
         spreadsheet: Joi.object({
@@ -26,12 +26,12 @@ function validateConfig(config) {
             }),
         }),
         logging: Joi.object({
-            level: Joi.string().valid(i18nGSConfig_1.LogLevel.Silent, i18nGSConfig_1.LogLevel.Error, i18nGSConfig_1.LogLevel.Warn, i18nGSConfig_1.LogLevel.Info, i18nGSConfig_1.LogLevel.Debug),
+            level: Joi.string().valid(i18nGSConfig_1.LogLevel.Error, i18nGSConfig_1.LogLevel.Warn, i18nGSConfig_1.LogLevel.Info, i18nGSConfig_1.LogLevel.Debug),
         }),
     });
     const { error } = schema.validate(config);
     if (error)
-        commander_1.program.error(`[Error]: Config ${error.message}`);
+        log_1.default.error(`Config ${error.message}`);
 }
 exports.validateConfig = validateConfig;
 //# sourceMappingURL=validate.js.map

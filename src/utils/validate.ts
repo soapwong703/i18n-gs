@@ -4,7 +4,7 @@ import i18nGSConfig, {
   LogLevel,
 } from "../types/i18nGSConfig";
 import * as Joi from "joi";
-import { program } from "commander";
+import log from "./log";
 
 export function validateConfig(config: i18nGSConfig) {
   const schema = Joi.object<i18nGSConfig>({
@@ -29,7 +29,6 @@ export function validateConfig(config: i18nGSConfig) {
     }),
     logging: Joi.object<i18nGSConfig["logging"]>({
       level: Joi.string().valid(
-        LogLevel.Silent,
         LogLevel.Error,
         LogLevel.Warn,
         LogLevel.Info,
@@ -40,5 +39,5 @@ export function validateConfig(config: i18nGSConfig) {
 
   const { error } = schema.validate(config);
 
-  if (error) program.error(`[Error]: Config ${error.message}`);
+  if (error) log.error(`Config ${error.message}`);
 }

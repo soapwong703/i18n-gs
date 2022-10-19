@@ -4,10 +4,10 @@ import {
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
 import i18nGSConfig from "i18nGSConfig";
-import log from "loglevel";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { i18nRecord, NamespaceData, SheetsData } from "i18nGSData";
+import log from "../utils/log";
 
 const { unflatten, flatten } = require("flat");
 
@@ -42,7 +42,7 @@ class i18nGS {
     try {
       credential = require(pathname);
     } catch {
-      program.error(`Credential file is not defined at: '${pathname}'`);
+      log.error(`Credential file is not defined at: '${pathname}'`);
     }
 
     await this.doc.useServiceAccountAuth(credential);
@@ -98,8 +98,7 @@ class i18nGS {
 
     log.debug("Selected namespaces:", namespaces);
 
-    if (namespaces.length === 0)
-      program.error("There is no selected namespace!");
+    if (namespaces.length === 0) log.error("There is no selected namespace!");
 
     const sheetsData: SheetsData = {};
 
@@ -178,7 +177,7 @@ class i18nGS {
       (await fs.readdirSync(path).filter((file) => !file.startsWith(".")))
     ).filter((locale) => !_localesExcludes?.includes(locale));
 
-    if (locales.length === 0) program.error("There is no selected locales!");
+    if (locales.length === 0) log.error("There is no selected locales!");
 
     locales.forEach((locale) => {
       const extensionRegExp = /\.\w+/g;
@@ -294,14 +293,14 @@ class i18nGS {
       });
 
       if (sheet.headerValues[0] !== "key")
-        program.error(
+        log.error(
           `Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`
         );
 
       defaultHeaderRow.forEach((col) => {
         log.debug(`Checking header column '${col}' is exist`);
         if (!sheet.headerValues.includes(col))
-          program.error(
+          log.error(
             `Header '${col}' not found! Please include it in the sheet and try again`
           );
       });

@@ -11,9 +11,9 @@ import {
 } from "./utils/helper";
 import { configFilename } from "./utils/constants";
 import I18nGS from "./classes/I18nGS";
-import log from "loglevel";
 import i18nGSConfig from "./types/i18nGSConfig";
 import { DeepPartial } from "DeepPartial";
+import log from "./utils/log";
 
 program
   .command("init")
@@ -23,7 +23,7 @@ program
     const configFile = fs.existsSync(pathname);
 
     if (configFile)
-      return program.error(
+      return log.error(
         `A '${configFilename}' file is already defined at: '${pathname}'`
       );
 
@@ -56,17 +56,16 @@ program
       await i18nGS.connect();
       const sheets = await i18nGS.readSheets();
       if (Object.values(sheets).length === 0)
-        program.error(`No sheets available for download!`);
+        log.error(`No sheets available for download!`);
 
       i18nGS.writeFiles(sheets);
 
-      // log.debug(sheets);
       log.info(`Finished downloading ${Object.keys(sheets).length} sheets`);
     } catch (err) {
       log.error(`Download failed!`);
       if (!!extractGoogleSheetError(err))
-        return program.error(extractGoogleSheetError(err));
-      return program.error(err);
+        return log.error(extractGoogleSheetError(err));
+      return log.error(err);
     }
   });
 
@@ -102,8 +101,8 @@ program
     } catch (err) {
       log.error(`Upload failed!`);
       if (!!extractGoogleSheetError(err))
-        return program.error(extractGoogleSheetError(err));
-      return program.error(err);
+        return log.error(extractGoogleSheetError(err));
+      return log.error(err);
     }
   });
 

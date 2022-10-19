@@ -7,11 +7,10 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const commander_1 = require("commander");
 const google_spreadsheet_1 = require("google-spreadsheet");
-const loglevel_1 = require("loglevel");
 const path = require("path");
 const fs = require("fs-extra");
+const log_1 = require("../utils/log");
 const { unflatten, flatten } = require("flat");
 class i18nGS {
     constructor(config) {
@@ -19,9 +18,9 @@ class i18nGS {
         this.config = config;
         this.doc = new google_spreadsheet_1.GoogleSpreadsheet(this.config.spreadsheet.sheetId);
         if ((_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.namespaces) === null || _c === void 0 ? void 0 : _c.excludes)
-            loglevel_1.default.info(`Excluding namespaces:`, (_f = (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.i18n) === null || _e === void 0 ? void 0 : _e.namespaces) === null || _f === void 0 ? void 0 : _f.excludes);
+            log_1.default.info(`Excluding namespaces:`, (_f = (_e = (_d = this.config) === null || _d === void 0 ? void 0 : _d.i18n) === null || _e === void 0 ? void 0 : _e.namespaces) === null || _f === void 0 ? void 0 : _f.excludes);
         if ((_j = (_h = (_g = this.config) === null || _g === void 0 ? void 0 : _g.i18n) === null || _h === void 0 ? void 0 : _h.locales) === null || _j === void 0 ? void 0 : _j.excludes)
-            loglevel_1.default.info(`Excluding locales:`, (_m = (_l = (_k = this.config) === null || _k === void 0 ? void 0 : _k.i18n) === null || _l === void 0 ? void 0 : _l.locales) === null || _m === void 0 ? void 0 : _m.excludes);
+            log_1.default.info(`Excluding locales:`, (_m = (_l = (_k = this.config) === null || _k === void 0 ? void 0 : _k.i18n) === null || _l === void 0 ? void 0 : _l.locales) === null || _m === void 0 ? void 0 : _m.excludes);
     }
     async connect() {
         switch (this.config.spreadsheet.credential.type) {
@@ -36,29 +35,29 @@ class i18nGS {
             credential = require(pathname);
         }
         catch (_a) {
-            commander_1.program.error(`Credential file is not defined at: '${pathname}'`);
+            log_1.default.error(`Credential file is not defined at: '${pathname}'`);
         }
         await this.doc.useServiceAccountAuth(credential);
         await this.doc.loadInfo();
-        loglevel_1.default.debug("Service account credential verified");
+        log_1.default.debug("Service account credential verified");
     }
     async readSheet(namespace) {
         var _a, _b, _c, _d, _e;
         const sheet = this.doc.sheetsByTitle[namespace];
         if (!sheet) {
-            loglevel_1.default.error(`Sheet '${namespace}' not found`);
+            log_1.default.error(`Sheet '${namespace}' not found`);
             return undefined;
         }
         const rows = await sheet.getRows().catch((err) => {
-            loglevel_1.default.error(`Loading Sheet '${namespace}'`);
+            log_1.default.error(`Loading Sheet '${namespace}'`);
             throw err;
         });
         const locales = ((_e = (_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.includes) !== null && _d !== void 0 ? _d : sheet.headerValues.slice(1)) !== null && _e !== void 0 ? _e : []).filter((locale) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(locale)); });
         if (locales.length === 0) {
-            loglevel_1.default.error(`No locale available in ${namespace}`);
+            log_1.default.error(`No locale available in ${namespace}`);
             return undefined;
         }
-        loglevel_1.default.info(`Loading sheet '${namespace}' with locale '${locales}'`);
+        log_1.default.info(`Loading sheet '${namespace}' with locale '${locales}'`);
         let namespaceData = {};
         rows.forEach((row) => {
             locales.forEach((langKey) => {
@@ -72,9 +71,9 @@ class i18nGS {
     async readSheets() {
         var _a, _b, _c, _d, _e;
         const namespaces = ((_e = (_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.namespaces) === null || _c === void 0 ? void 0 : _c.includes) !== null && _d !== void 0 ? _d : Object.keys(this.doc.sheetsByTitle)) !== null && _e !== void 0 ? _e : []).filter((namespace) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.namespaces) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(namespace)); });
-        loglevel_1.default.debug("Selected namespaces:", namespaces);
+        log_1.default.debug("Selected namespaces:", namespaces);
         if (namespaces.length === 0)
-            commander_1.program.error("There is no selected namespace!");
+            log_1.default.error("There is no selected namespace!");
         const sheetsData = {};
         for (const namespace of namespaces) {
             const sheet = await this.readSheet(namespace);
@@ -103,9 +102,9 @@ class i18nGS {
                 fs.mkdirSync(`${path}/${locale}`, { recursive: true });
             // if no namespace file, make file
             if (!fs.existsSync(`${path}/${locale}/${namespace}.json`))
-                loglevel_1.default.info(`creating ${path}/${locale}/${namespace}.json`);
+                log_1.default.info(`creating ${path}/${locale}/${namespace}.json`);
             else
-                loglevel_1.default.info(`updating ${path}/${locale}/${namespace}.json`);
+                log_1.default.info(`updating ${path}/${locale}/${namespace}.json`);
             // update namespace file, overwrite all data
             fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
                 spaces: 2,
@@ -121,7 +120,7 @@ class i18nGS {
             return flatten(data);
         }
         catch (err) {
-            loglevel_1.default.error(`Fail to open ${path}`);
+            log_1.default.error(`Fail to open ${path}`);
         }
     }
     async readFiles() {
@@ -131,18 +130,18 @@ class i18nGS {
         const sheetsData = {};
         const locales = (_localesIncludes !== null && _localesIncludes !== void 0 ? _localesIncludes : (await fs.readdirSync(path).filter((file) => !file.startsWith(".")))).filter((locale) => !(_localesExcludes === null || _localesExcludes === void 0 ? void 0 : _localesExcludes.includes(locale)));
         if (locales.length === 0)
-            commander_1.program.error("There is no selected locales!");
+            log_1.default.error("There is no selected locales!");
         locales.forEach((locale) => {
             const extensionRegExp = /\.\w+/g;
             const files = fs
                 .readdirSync(`${path}/${locale}`)
                 .filter((file) => !file.startsWith("."));
             const namespaces = (_namespacesIncludes !== null && _namespacesIncludes !== void 0 ? _namespacesIncludes : files.map((filename) => filename.replace(extensionRegExp, ""))).filter((namespace) => !(_namespacesExcludes === null || _namespacesExcludes === void 0 ? void 0 : _namespacesExcludes.includes(namespace)));
-            loglevel_1.default.debug(`Selected namespaces in '${locale}':`, namespaces);
+            log_1.default.debug(`Selected namespaces in '${locale}':`, namespaces);
             if (namespaces.length === 0)
-                loglevel_1.default.error(`There is no available namespace in '${locale}'`);
+                log_1.default.error(`There is no available namespace in '${locale}'`);
             namespaces.forEach((namespace) => {
-                loglevel_1.default.info(`Loading namespace '${namespace}' in '${locale}'`);
+                log_1.default.info(`Loading namespace '${namespace}' in '${locale}'`);
                 const data = this.readFile(`${path}/${locale}/${namespace}.json`);
                 if (!data)
                     return;
@@ -181,7 +180,7 @@ class i18nGS {
                     if (cell.value !== clone[row.key][locale]) {
                         if (cell.value === null && !clone[row.key][locale])
                             continue;
-                        loglevel_1.default.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
+                        log_1.default.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
                         cell.value = (_a = clone[row.key][locale]) !== null && _a !== void 0 ? _a : "";
                         updateCount++;
                     }
@@ -190,17 +189,17 @@ class i18nGS {
             }
             if (updateCount > 0)
                 await sheet.saveUpdatedCells();
-            loglevel_1.default.info(`Sheet '${sheet.title}' has updated ${updateCount} cells`);
+            log_1.default.info(`Sheet '${sheet.title}' has updated ${updateCount} cells`);
             return clone;
         }
         async function appendNonExistKey(sheet, data) {
             const appendRows = Object.entries(data).map(([key, value]) => (Object.assign({ key }, value)));
             if (appendRows.length > 0)
                 await sheet.addRows(appendRows).then(() => {
-                    if (loglevel_1.default.getLevel() <= loglevel_1.default.levels.DEBUG)
-                        appendRows.forEach((col) => loglevel_1.default.debug(`Appended row '${col.key}' to '${sheet.title}'`));
+                    if (log_1.default.getLevel() <= log_1.default.levels.DEBUG)
+                        appendRows.forEach((col) => log_1.default.debug(`Appended row '${col.key}' to '${sheet.title}'`));
                 });
-            loglevel_1.default.info(`Sheet ${sheet.title} has appended ${appendRows.length} rows`);
+            log_1.default.info(`Sheet ${sheet.title} has appended ${appendRows.length} rows`);
         }
         try {
             for (var _c = __asyncValues(Object.entries(i18n)), _d; _d = await _c.next(), !_d.done;) {
@@ -213,19 +212,19 @@ class i18nGS {
                         title: namespace,
                         headerValues: defaultHeaderRow,
                     });
-                    loglevel_1.default.info(`Created sheet '${namespace}'`);
+                    log_1.default.info(`Created sheet '${namespace}'`);
                 }
-                loglevel_1.default.info(`Uploading to sheet '${namespace}'`);
+                log_1.default.info(`Uploading to sheet '${namespace}'`);
                 await sheet.loadHeaderRow().catch(async () => {
                     // if no header row, assume sheet is empty and insert default header
                     await sheet.setHeaderRow(defaultHeaderRow);
                 });
                 if (sheet.headerValues[0] !== "key")
-                    commander_1.program.error(`Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`);
+                    log_1.default.error(`Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`);
                 defaultHeaderRow.forEach((col) => {
-                    loglevel_1.default.debug(`Checking header column '${col}' is exist`);
+                    log_1.default.debug(`Checking header column '${col}' is exist`);
                     if (!sheet.headerValues.includes(col))
-                        commander_1.program.error(`Header '${col}' not found! Please include it in the sheet and try again`);
+                        log_1.default.error(`Header '${col}' not found! Please include it in the sheet and try again`);
                 });
                 await sheet.loadCells();
                 const keyData = getKeyOrientedNamespaceData(data);

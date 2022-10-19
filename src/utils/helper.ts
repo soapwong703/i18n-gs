@@ -4,9 +4,8 @@ import { configFilename, baseConfig } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { DeepPartial } from "DeepPartial";
-import log from "loglevel";
-import { program } from "commander";
 import { validateConfig } from "./validate";
+import log from "./log";
 
 /**
  * Simple object check.
@@ -89,28 +88,6 @@ export function extractGoogleSheetError(err) {
   return `[GoogleAPIError:${code}] ${message}`;
 }
 
-// function validateConfig(config: DeepPartial<i18nGSConfig>) {
-//   // TODO verify config file
-//   if (
-//     !config?.spreadsheet?.sheetId ||
-//     typeof config?.spreadsheet?.sheetId !== "string"
-//   )
-//     program.error("Sheet Id is not valid!");
-//   if (!config?.spreadsheet?.credential)
-//     program.error("Credential is not provided!");
-//   if (
-//     !Object.values(CredentialType).includes(
-//       config?.spreadsheet?.credential?.type
-//     )
-//   )
-//     program.error("Credential type is not valid!");
-//   if (
-//     !config?.spreadsheet?.credential?.path ||
-//     typeof config?.spreadsheet?.credential?.path !== "string"
-//   )
-//     program.error("Credential path is not valid!");
-// }
-
 export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
   const pathname = path.resolve(configFilename);
   let fileConfig = undefined;
@@ -119,7 +96,7 @@ export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
   try {
     fileConfig = require(pathname);
   } catch (err) {
-    program.error(`'${configFilename}' is not defined at: '${pathname}'`);
+    log.error(`'${configFilename}' is not defined at: '${pathname}'`);
   }
 
   if (initConfig) mergeDeep(config, fileConfig, inlineConfig);
@@ -130,8 +107,7 @@ export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
     logging: { level },
   } = config;
 
-  if (log.levels[level] !== undefined) log.setLevel(level, false);
-  else log.setLevel(baseConfig.logging.level, false);
+  log.setLevel(level, false);
 
   return config;
 }

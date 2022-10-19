@@ -5,9 +5,8 @@ const i18nGSConfig_1 = require("../types/i18nGSConfig");
 const constants_1 = require("./constants");
 const path = require("path");
 const fs = require("fs");
-const loglevel_1 = require("loglevel");
-const commander_1 = require("commander");
 const validate_1 = require("./validate");
+const log_1 = require("./log");
 /**
  * Simple object check.
  * @param item
@@ -80,27 +79,6 @@ function extractGoogleSheetError(err) {
     return `[GoogleAPIError:${code}] ${message}`;
 }
 exports.extractGoogleSheetError = extractGoogleSheetError;
-// function validateConfig(config: DeepPartial<i18nGSConfig>) {
-//   // TODO verify config file
-//   if (
-//     !config?.spreadsheet?.sheetId ||
-//     typeof config?.spreadsheet?.sheetId !== "string"
-//   )
-//     program.error("Sheet Id is not valid!");
-//   if (!config?.spreadsheet?.credential)
-//     program.error("Credential is not provided!");
-//   if (
-//     !Object.values(CredentialType).includes(
-//       config?.spreadsheet?.credential?.type
-//     )
-//   )
-//     program.error("Credential type is not valid!");
-//   if (
-//     !config?.spreadsheet?.credential?.path ||
-//     typeof config?.spreadsheet?.credential?.path !== "string"
-//   )
-//     program.error("Credential path is not valid!");
-// }
 function initConfig(inlineConfig) {
     const pathname = path.resolve(constants_1.configFilename);
     let fileConfig = undefined;
@@ -109,16 +87,13 @@ function initConfig(inlineConfig) {
         fileConfig = require(pathname);
     }
     catch (err) {
-        commander_1.program.error(`'${constants_1.configFilename}' is not defined at: '${pathname}'`);
+        log_1.default.error(`'${constants_1.configFilename}' is not defined at: '${pathname}'`);
     }
     if (initConfig)
         mergeDeep(config, fileConfig, inlineConfig);
     (0, validate_1.validateConfig)(config);
     const { logging: { level }, } = config;
-    if (loglevel_1.default.levels[level] !== undefined)
-        loglevel_1.default.setLevel(level, false);
-    else
-        loglevel_1.default.setLevel(constants_1.baseConfig.logging.level, false);
+    log_1.default.setLevel(level, false);
     return config;
 }
 exports.initConfig = initConfig;
