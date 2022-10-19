@@ -36,7 +36,7 @@ Initialize the project with config file
 i18n-gs import
 ```
 
-Import the files from google sheet
+Import the files to google sheet (only support flat key style)
 
 ## Export
 
@@ -44,4 +44,4 @@ Import the files from google sheet
 i18n-gs export
 ```
 
-Export the files to google sheet (only support flat key style)
+Export the files from google sheet

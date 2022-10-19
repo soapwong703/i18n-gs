@@ -19,8 +19,8 @@ commander_1.program
     (0, helper_1.generateConfigFile)();
 });
 commander_1.program
-    .command("import [namespaces...]")
-    .description("Import the files from google sheet")
+    .command("export [namespaces...]")
+    .description("Export the files from google sheet")
     .option("-l, --locales <locales...>")
     .action(async (namespaces, options) => {
     const inlineConfig = {
@@ -43,21 +43,21 @@ commander_1.program
         await i18nGS.connect();
         const sheets = await i18nGS.readSheets();
         if (Object.values(sheets).length === 0)
-            commander_1.program.error(`No sheets available for import!`);
+            commander_1.program.error(`No sheets available for export!`);
         i18nGS.writeFiles(sheets);
         // log.debug(sheets);
-        loglevel_1.default.info(`Finished importing ${Object.keys(sheets).length} sheets`);
+        loglevel_1.default.info(`Finished exporting ${Object.keys(sheets).length} sheets`);
     }
     catch (err) {
-        loglevel_1.default.error(`Import failed!`);
+        loglevel_1.default.error(`Export failed!`);
         if (!!(0, helper_1.extractGoogleSheetError)(err))
             return commander_1.program.error((0, helper_1.extractGoogleSheetError)(err));
         return commander_1.program.error(err);
     }
 });
 commander_1.program
-    .command("export [namespaces...]")
-    .description("Export the files to google sheet")
+    .command("import [namespaces...]")
+    .description("Import the files to google sheet")
     .option("-l, --locales <locales...>")
     .action(async (namespaces, options) => {
     const inlineConfig = {
@@ -80,10 +80,10 @@ commander_1.program
         await i18nGS.connect();
         const sheetsData = await i18nGS.readFiles();
         await i18nGS.upsertAllSheets(sheetsData);
-        loglevel_1.default.info(`Finished exporting ${Object.keys(sheetsData).length} sheets`);
+        loglevel_1.default.info(`Finished importing ${Object.keys(sheetsData).length} sheets`);
     }
     catch (err) {
-        loglevel_1.default.error(`Export failed!`);
+        loglevel_1.default.error(`Import failed!`);
         if (!!(0, helper_1.extractGoogleSheetError)(err))
             return commander_1.program.error((0, helper_1.extractGoogleSheetError)(err));
         return commander_1.program.error(err);

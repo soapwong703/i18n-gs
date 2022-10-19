@@ -9,14 +9,6 @@ module.exports = {
   i18n: {
     path: "./test/locales",
     keyStyle: "nested",
-    namespaces: {
-      // includes: ["activity"],
-      // excludes: ["activity"],
-    },
-    locales: {
-      // includes: ["zh-HK", "zh-CN", "en-US"],
-      // excludes: ["zh-HK", "zh-CN"],
-    },
   },
   logging: {
     level: "info",

@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "description": "Support Google Sheets push and fetch into i18n json file.",
   "main": "bin/index.js",
-  "bin": "bin/index.js",
+  "bin": {
+    "i18ngs": "bin/index.js"
+  },
   "repository": "https://github.com/soapwong703/i18n-gs.git",
   "author": "Soap Wong <68498079+soapwong703@users.noreply.github.com>",
   "license": "MIT",

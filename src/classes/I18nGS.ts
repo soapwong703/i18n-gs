@@ -61,7 +61,10 @@ class i18nGS {
       return undefined;
     }
 
-    const rows = await sheet.getRows();
+    const rows = await sheet.getRows().catch((err) => {
+      log.error(`Loading Sheet '${namespace}'`);
+      throw err;
+    });
 
     const locales = (
       this.config?.i18n?.locales?.includes ??
@@ -225,7 +228,7 @@ class i18nGS {
         });
         log.info(`Created sheet '${namespace}'`);
       }
-      log.info(`Exporting to sheet '${namespace}'`);
+      log.info(`Uploading to sheet '${namespace}'`);
       const sheet = this.doc.sheetsByTitle[namespace];
 
       await sheet.loadHeaderRow().catch(async () => {
@@ -249,29 +252,7 @@ class i18nGS {
       await sheet.loadCells();
       const rows = await sheet.getRows();
 
-      // update existing keys
-      let updatedCells = 0;
-      for await (const row of rows) {
-        for (const lang in data) {
-          if (!data?.[lang]?.[row.key]) continue;
-          const columnIndex = sheet.headerValues.findIndex(
-            (col) => col === lang
-          );
-          const cell = await sheet.getCell(row.rowIndex - 1, columnIndex);
-          if (cell.value !== data[lang][row.key]) {
-            if (cell.value === null && !data[lang][row.key]) continue;
-            log.debug(`Updating ${namespace}/${row.key}/${lang}`);
-            cell.value = (data[lang][row.key] as string) ?? "";
-            updatedCells++;
-          }
-          delete data[lang][row.key];
-        }
-      }
-      if (updatedCells > 0) await sheet.saveUpdatedCells();
-      log.info(`Sheet '${namespace}' has updated ${updatedCells} cells`);
-
-      // append non-existing key
-      const appendObject: { [key: string]: { [locale: string]: string } } =
+      const updateObject: { [key: string]: { [locale: string]: string } } =
         Object.entries(data).reduce((acc, [locale, record]) => {
           Object.entries(record).forEach(([key, value]) => {
             acc[key] = acc[key] || {};
@@ -279,7 +260,30 @@ class i18nGS {
           });
           return acc;
         }, {});
-      const appendArray = Object.entries(appendObject).map(([key, value]) => ({
+
+      // update existing keys
+      let updatedCells = 0;
+      for await (const row of rows) {
+        if (!updateObject?.[row.key]) continue;
+        for (const lang in updateObject[row.key]) {
+          const columnIndex = sheet.headerValues.findIndex(
+            (col) => col === lang
+          );
+          const cell = await sheet.getCell(row.rowIndex - 1, columnIndex);
+          if (cell.value !== updateObject[row.key][lang]) {
+            if (cell.value === null && !updateObject[row.key][lang]) continue;
+            log.debug(`Updating ${namespace}/${row.key}/${lang}`);
+            cell.value = updateObject[row.key][lang] ?? "";
+            updatedCells++;
+          }
+        }
+        delete updateObject[row.key];
+      }
+      if (updatedCells > 0) await sheet.saveUpdatedCells();
+      log.info(`Sheet '${namespace}' has updated ${updatedCells} cells`);
+
+      // append non-existing key
+      const appendArray = Object.entries(updateObject).map(([key, value]) => ({
         key,
         ...value,
       }));
