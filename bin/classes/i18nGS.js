@@ -36,7 +36,7 @@ class i18nGS {
             credential = require(pathname);
         }
         catch (_a) {
-            commander_1.program.error(`Cannot not find a credential file at: '${pathname}'`);
+            commander_1.program.error(`Credential file is not defined at: '${pathname}'`);
         }
         await this.doc.useServiceAccountAuth(credential);
         await this.doc.loadInfo();
@@ -59,15 +59,15 @@ class i18nGS {
             return undefined;
         }
         loglevel_1.default.info(`Loading sheet '${namespace}' with locale '${locales}'`);
-        let result = {};
+        let namespaceData = {};
         rows.forEach((row) => {
             locales.forEach((langKey) => {
                 var _a;
-                result[langKey] = result[langKey] || {};
-                result[langKey][row.key] = (_a = row[langKey]) !== null && _a !== void 0 ? _a : "";
+                namespaceData[langKey] = namespaceData[langKey] || {};
+                namespaceData[langKey][row.key] = (_a = row[langKey]) !== null && _a !== void 0 ? _a : "";
             });
         });
-        return result;
+        return namespaceData;
     }
     async readSheets() {
         var _a, _b, _c, _d, _e;
@@ -75,18 +75,17 @@ class i18nGS {
         loglevel_1.default.debug("Selected namespaces:", namespaces);
         if (namespaces.length === 0)
             commander_1.program.error("There is no selected namespace!");
-        const objBySheet = {};
+        const sheetsData = {};
         for (const namespace of namespaces) {
             const sheet = await this.readSheet(namespace);
             if (sheet)
-                objBySheet[namespace] = sheet;
+                sheetsData[namespace] = sheet;
         }
-        return objBySheet;
+        return sheetsData;
     }
     writeFile(namespaceData, namespace) {
         Object.keys(namespaceData).forEach((locale) => {
             var _a, _b;
-            // TODO maybe support command option
             const keyStyle = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.keyStyle;
             let i18n = undefined;
             switch (keyStyle) {
@@ -98,9 +97,8 @@ class i18nGS {
                     i18n = unflatten(namespaceData[locale], { object: true });
                     break;
             }
-            // TODO support command option
             const path = this.config.i18n.path;
-            // if no folder, make folder
+            // if no folder, make directory
             if (!fs.existsSync(`${path}/${locale}`))
                 fs.mkdirSync(`${path}/${locale}`, { recursive: true });
             // if no namespace file, make file
@@ -135,11 +133,11 @@ class i18nGS {
         if (locales.length === 0)
             commander_1.program.error("There is no selected locales!");
         locales.forEach((locale) => {
-            const extReg = /\.\w+/g;
+            const extensionRegExp = /\.\w+/g;
             const files = fs
                 .readdirSync(`${path}/${locale}`)
                 .filter((file) => !file.startsWith("."));
-            const namespaces = (_namespacesIncludes !== null && _namespacesIncludes !== void 0 ? _namespacesIncludes : files.map((filename) => filename.replace(extReg, ""))).filter((namespace) => !(_namespacesExcludes === null || _namespacesExcludes === void 0 ? void 0 : _namespacesExcludes.includes(namespace)));
+            const namespaces = (_namespacesIncludes !== null && _namespacesIncludes !== void 0 ? _namespacesIncludes : files.map((filename) => filename.replace(extensionRegExp, ""))).filter((namespace) => !(_namespacesExcludes === null || _namespacesExcludes === void 0 ? void 0 : _namespacesExcludes.includes(namespace)));
             loglevel_1.default.debug(`Selected namespaces in '${locale}':`, namespaces);
             if (namespaces.length === 0)
                 loglevel_1.default.error(`There is no available namespace in '${locale}'`);

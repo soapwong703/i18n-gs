@@ -7,7 +7,7 @@ import i18nGSConfig from "i18nGSConfig";
 import log from "loglevel";
 import * as path from "path";
 import * as fs from "fs-extra";
-import { NamespaceData, SheetsData } from "i18nGSData";
+import { i18nRecord, NamespaceData, SheetsData } from "i18nGSData";
 
 const { unflatten, flatten } = require("flat");
 
@@ -42,7 +42,7 @@ class i18nGS {
     try {
       credential = require(pathname);
     } catch {
-      program.error(`Cannot not find a credential file at: '${pathname}'`);
+      program.error(`Credential file is not defined at: '${pathname}'`);
     }
 
     await this.doc.useServiceAccountAuth(credential);
@@ -76,14 +76,14 @@ class i18nGS {
     }
 
     log.info(`Loading sheet '${namespace}' with locale '${locales}'`);
-    let result = {};
+    let namespaceData: NamespaceData = {};
     rows.forEach((row) => {
       locales.forEach((langKey) => {
-        result[langKey] = result[langKey] || {};
-        result[langKey][row.key] = row[langKey] ?? "";
+        namespaceData[langKey] = namespaceData[langKey] || {};
+        namespaceData[langKey][row.key] = row[langKey] ?? "";
       });
     });
-    return result;
+    return namespaceData;
   }
 
   async readSheets(): Promise<SheetsData> {
@@ -101,19 +101,18 @@ class i18nGS {
     if (namespaces.length === 0)
       program.error("There is no selected namespace!");
 
-    const objBySheet = {};
+    const sheetsData: SheetsData = {};
 
     for (const namespace of namespaces) {
       const sheet = await this.readSheet(namespace);
-      if (sheet) objBySheet[namespace] = sheet;
+      if (sheet) sheetsData[namespace] = sheet;
     }
 
-    return objBySheet;
+    return sheetsData;
   }
 
-  writeFile(namespaceData: NamespaceData, namespace) {
+  writeFile(namespaceData: NamespaceData, namespace: string) {
     Object.keys(namespaceData).forEach((locale) => {
-      // TODO maybe support command option
       const keyStyle = this.config?.i18n?.keyStyle;
       let i18n = undefined;
 
@@ -127,10 +126,9 @@ class i18nGS {
           break;
       }
 
-      // TODO support command option
       const path = this.config.i18n.path;
 
-      // if no folder, make folder
+      // if no folder, make directory
       if (!fs.existsSync(`${path}/${locale}`))
         fs.mkdirSync(`${path}/${locale}`, { recursive: true });
 
@@ -152,7 +150,7 @@ class i18nGS {
     );
   }
 
-  readFile(path) {
+  readFile(path: string): i18nRecord {
     try {
       const data = fs.readJsonSync(path);
       return flatten(data);
@@ -174,7 +172,7 @@ class i18nGS {
     } = this.config;
     if (!fs.existsSync(path)) throw new Error(`Path '${path}' does not exist`);
 
-    const sheetsData = {};
+    const sheetsData: SheetsData = {};
     const locales = (
       _localesIncludes ??
       (await fs.readdirSync(path).filter((file) => !file.startsWith(".")))
@@ -183,14 +181,14 @@ class i18nGS {
     if (locales.length === 0) program.error("There is no selected locales!");
 
     locales.forEach((locale) => {
-      const extReg = /\.\w+/g;
+      const extensionRegExp = /\.\w+/g;
       const files = fs
         .readdirSync(`${path}/${locale}`)
         .filter((file) => !file.startsWith("."));
 
       const namespaces = (
         _namespacesIncludes ??
-        files.map((filename) => filename.replace(extReg, ""))
+        files.map((filename) => filename.replace(extensionRegExp, ""))
       ).filter((namespace) => !_namespacesExcludes?.includes(namespace));
 
       log.debug(`Selected namespaces in '${locale}':`, namespaces);
