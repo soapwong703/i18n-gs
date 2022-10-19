@@ -1,10 +1,11 @@
 import i18nGSConfig from "i18nGSConfig";
-import { configFilename, baseConfig as baseConfig } from "./constants";
+import { configFilename, baseConfig } from "./constants";
 
 import * as path from "path";
 import * as fs from "fs";
 import { DeepPartial } from "DeepPartial";
 import log from "loglevel";
+import { program } from "commander";
 
 /**
  * Simple object check.
@@ -89,8 +90,14 @@ export function extractGoogleSheetError(err) {
 
 export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
   const pathname = path.resolve(configFilename);
-  const fileConfig = require(pathname);
+  let fileConfig = undefined;
   const config = baseConfig;
+
+  try {
+    fileConfig = require(pathname);
+  } catch (err) {
+    program.error(`'${configFilename}' is not defined at: '${pathname}'`);
+  }
 
   // TODO verify configfile
 

@@ -5,6 +5,7 @@ const constants_1 = require("./constants");
 const path = require("path");
 const fs = require("fs");
 const loglevel_1 = require("loglevel");
+const commander_1 = require("commander");
 /**
  * Simple object check.
  * @param item
@@ -79,8 +80,14 @@ function extractGoogleSheetError(err) {
 exports.extractGoogleSheetError = extractGoogleSheetError;
 function initConfig(inlineConfig) {
     const pathname = path.resolve(constants_1.configFilename);
-    const fileConfig = require(pathname);
+    let fileConfig = undefined;
     const config = constants_1.baseConfig;
+    try {
+        fileConfig = require(pathname);
+    }
+    catch (err) {
+        commander_1.program.error(`'${constants_1.configFilename}' is not defined at: '${pathname}'`);
+    }
     // TODO verify configfile
     if (initConfig)
         mergeDeep(config, fileConfig, inlineConfig);
