@@ -31,8 +31,8 @@ program
   });
 
 program
-  .command("export [namespaces...]")
-  .description("Export the files from google sheet")
+  .command("download [namespaces...]")
+  .description("Download the files from google sheet")
   .option("-l, --locales <locales...>")
   .action(async (namespaces, options) => {
     const inlineConfig: DeepPartial<i18nGSConfig> = {
@@ -56,14 +56,14 @@ program
       await i18nGS.connect();
       const sheets = await i18nGS.readSheets();
       if (Object.values(sheets).length === 0)
-        program.error(`No sheets available for export!`);
+        program.error(`No sheets available for download!`);
 
       i18nGS.writeFiles(sheets);
 
       // log.debug(sheets);
-      log.info(`Finished exporting ${Object.keys(sheets).length} sheets`);
+      log.info(`Finished downloading ${Object.keys(sheets).length} sheets`);
     } catch (err) {
-      log.error(`Export failed!`);
+      log.error(`Download failed!`);
       if (!!extractGoogleSheetError(err))
         return program.error(extractGoogleSheetError(err));
       return program.error(err);
@@ -71,8 +71,8 @@ program
   });
 
 program
-  .command("import [namespaces...]")
-  .description("Import the files to google sheet")
+  .command("upload [namespaces...]")
+  .description("Upload the files to google sheet")
   .option("-l, --locales <locales...>")
   .action(async (namespaces, options) => {
     const inlineConfig: DeepPartial<i18nGSConfig> = {
@@ -98,9 +98,9 @@ program
       const sheetsData = await i18nGS.readFiles();
       await i18nGS.upsertAllSheets(sheetsData);
 
-      log.info(`Finished importing ${Object.keys(sheetsData).length} sheets`);
+      log.info(`Finished uploading ${Object.keys(sheetsData).length} sheets`);
     } catch (err) {
-      log.error(`Import failed!`);
+      log.error(`Upload failed!`);
       if (!!extractGoogleSheetError(err))
         return program.error(extractGoogleSheetError(err));
       return program.error(err);

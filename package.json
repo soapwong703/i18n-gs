@@ -6,6 +6,10 @@
   "bin": {
     "i18ngs": "bin/index.js"
   },
+  "files": [
+    "bin",
+    "src"
+  ],
   "repository": "https://github.com/soapwong703/i18n-gs.git",
   "author": "Soap Wong <68498079+soapwong703@users.noreply.github.com>",
   "license": "MIT",

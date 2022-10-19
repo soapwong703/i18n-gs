@@ -25,23 +25,23 @@ unlink the project to local npm globally
 ## Init
 
 ```console
-i18n-gs init
+i18ngs init
 ```
 
 Initialize the project with config file
 
-## Import
+## Upload
 
 ```console
-i18n-gs import
+i18ngs upload
 ```
 
-Import the files to google sheet (only support flat key style)
+Upload the files to google sheet (only support flat key style)
 
-## Export
+## Download
 
 ```console
-i18n-gs export
+i18ngs download
 ```
 
-Export the files from google sheet
+Download the files from google sheet
