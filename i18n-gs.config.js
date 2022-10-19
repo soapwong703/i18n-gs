@@ -11,6 +11,6 @@ module.exports = {
     keyStyle: "nested",
   },
   logging: {
-    level: "info",
+    level: "debug",
   },
 };

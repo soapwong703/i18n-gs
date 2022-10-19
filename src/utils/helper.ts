@@ -77,7 +77,6 @@ export function extractGoogleSheetError(err) {
   const {
     code,
     message,
-    status,
   }: {
     code: number;
     message: string;

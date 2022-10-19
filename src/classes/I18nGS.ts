@@ -1,5 +1,8 @@
 import { program } from "commander";
-import { GoogleSpreadsheet } from "google-spreadsheet";
+import {
+  GoogleSpreadsheet,
+  GoogleSpreadsheetWorksheet,
+} from "google-spreadsheet";
 import i18nGSConfig from "i18nGSConfig";
 import log from "loglevel";
 import * as path from "path";
@@ -7,12 +10,6 @@ import * as fs from "fs-extra";
 import { NamespaceData, SheetsData } from "i18nGSData";
 
 const { unflatten, flatten } = require("flat");
-
-/**
- * @todo support keyStyle
- * @todo support locales includes / excludes
- * @todo support namespace includes / excludes
- */
 
 class i18nGS {
   protected config: i18nGSConfig;
@@ -216,24 +213,86 @@ class i18nGS {
     return sheetsData;
   }
 
-  async upsertAllSheets(i18n: SheetsData) {
+  async upsertSheets(i18n: SheetsData) {
+    function getKeyOrientedNamespaceData(data: NamespaceData): {
+      [key: string]: { [locale: string]: string };
+    } {
+      return Object.entries(data).reduce((acc, [locale, record]) => {
+        Object.entries(record).forEach(([key, value]) => {
+          acc[key] = acc[key] || {};
+          acc[key][locale] = value;
+        });
+        return acc;
+      }, {});
+    }
+
+    async function updateExistKey(
+      sheet: GoogleSpreadsheetWorksheet,
+      data: ReturnType<typeof getKeyOrientedNamespaceData>
+    ): Promise<ReturnType<typeof getKeyOrientedNamespaceData>> {
+      const rows = await sheet.getRows();
+      const clone = JSON.parse(JSON.stringify(data));
+      let updateCount = 0;
+      for (const row of rows) {
+        if (!clone?.[row.key]) continue;
+        for (const locale in clone[row.key]) {
+          const columnIndex = sheet.headerValues.findIndex(
+            (header) => header === locale
+          );
+          const cell = sheet.getCell(row.rowIndex - 1, columnIndex);
+          if (cell.value !== clone[row.key][locale]) {
+            if (cell.value === null && !clone[row.key][locale]) continue;
+            log.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
+            cell.value = clone[row.key][locale] ?? "";
+            updateCount++;
+          }
+        }
+        delete clone[row.key];
+      }
+
+      if (updateCount > 0) await sheet.saveUpdatedCells();
+      log.info(`Sheet '${sheet.title}' has updated ${updateCount} cells`);
+
+      return clone;
+    }
+
+    async function appendNonExistKey(
+      sheet: GoogleSpreadsheetWorksheet,
+      data: ReturnType<typeof getKeyOrientedNamespaceData>
+    ) {
+      const appendRows = Object.entries(data).map(([key, value]) => ({
+        key,
+        ...value,
+      }));
+
+      if (appendRows.length > 0)
+        await sheet.addRows(appendRows).then(() => {
+          if (log.getLevel() <= log.levels.DEBUG)
+            appendRows.forEach((col) =>
+              log.debug(`Appended row '${col.key}' to '${sheet.title}'`)
+            );
+        });
+
+      log.info(`Sheet ${sheet.title} has appended ${appendRows.length} rows`);
+    }
+
     for await (const [namespace, data] of Object.entries(i18n)) {
       const locales = Object.keys(data);
+      const defaultHeaderRow = ["key", ...locales];
+      const sheet = this.doc.sheetsByTitle?.[namespace];
 
-      const newHeaderColumn = ["key", ...locales];
-      if (!this.doc.sheetsByTitle?.[namespace]) {
+      if (!sheet) {
         await this.doc.addSheet({
           title: namespace,
-          headerValues: newHeaderColumn,
+          headerValues: defaultHeaderRow,
         });
         log.info(`Created sheet '${namespace}'`);
       }
       log.info(`Uploading to sheet '${namespace}'`);
-      const sheet = this.doc.sheetsByTitle[namespace];
 
       await sheet.loadHeaderRow().catch(async () => {
-        // if no header row, assume sheet is empty
-        await sheet.setHeaderRow(newHeaderColumn);
+        // if no header row, assume sheet is empty and insert default header
+        await sheet.setHeaderRow(defaultHeaderRow);
       });
 
       if (sheet.headerValues[0] !== "key")
@@ -241,7 +300,7 @@ class i18nGS {
           `Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`
         );
 
-      newHeaderColumn.forEach((col) => {
+      defaultHeaderRow.forEach((col) => {
         log.debug(`Checking header column '${col}' is exist`);
         if (!sheet.headerValues.includes(col))
           program.error(
@@ -250,53 +309,10 @@ class i18nGS {
       });
 
       await sheet.loadCells();
-      const rows = await sheet.getRows();
 
-      const updateObject: { [key: string]: { [locale: string]: string } } =
-        Object.entries(data).reduce((acc, [locale, record]) => {
-          Object.entries(record).forEach(([key, value]) => {
-            acc[key] = acc[key] || {};
-            acc[key][locale] = value;
-          });
-          return acc;
-        }, {});
-
-      // update existing keys
-      let updatedCells = 0;
-      for await (const row of rows) {
-        if (!updateObject?.[row.key]) continue;
-        for (const lang in updateObject[row.key]) {
-          const columnIndex = sheet.headerValues.findIndex(
-            (col) => col === lang
-          );
-          const cell = await sheet.getCell(row.rowIndex - 1, columnIndex);
-          if (cell.value !== updateObject[row.key][lang]) {
-            if (cell.value === null && !updateObject[row.key][lang]) continue;
-            log.debug(`Updating ${namespace}/${row.key}/${lang}`);
-            cell.value = updateObject[row.key][lang] ?? "";
-            updatedCells++;
-          }
-        }
-        delete updateObject[row.key];
-      }
-      if (updatedCells > 0) await sheet.saveUpdatedCells();
-      log.info(`Sheet '${namespace}' has updated ${updatedCells} cells`);
-
-      // append non-existing key
-      const appendArray = Object.entries(updateObject).map(([key, value]) => ({
-        key,
-        ...value,
-      }));
-
-      if (appendArray.length > 0)
-        await sheet.addRows(appendArray).then(() => {
-          if (log.getLevel() <= log.levels.DEBUG)
-            appendArray.forEach((col) =>
-              log.debug(`Appended row '${col.key}' to '${namespace}'`)
-            );
-        });
-
-      log.info(`Sheet '${namespace}' has appended ${appendArray.length} rows`);
+      const keyData = getKeyOrientedNamespaceData(data);
+      const leftoverData = await updateExistKey(sheet, keyData);
+      await appendNonExistKey(sheet, leftoverData);
     }
   }
 }

@@ -96,7 +96,7 @@ program
       await i18nGS.connect();
 
       const sheetsData = await i18nGS.readFiles();
-      await i18nGS.upsertAllSheets(sheetsData);
+      await i18nGS.upsertSheets(sheetsData);
 
       log.info(`Finished uploading ${Object.keys(sheetsData).length} sheets`);
     } catch (err) {

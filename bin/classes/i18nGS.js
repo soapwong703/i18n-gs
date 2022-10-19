@@ -13,11 +13,6 @@ const loglevel_1 = require("loglevel");
 const path = require("path");
 const fs = require("fs-extra");
 const { unflatten, flatten } = require("flat");
-/**
- * @todo support keyStyle
- * @todo support locales includes / excludes
- * @todo support namespace includes / excludes
- */
 class i18nGS {
     constructor(config) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
@@ -162,117 +157,88 @@ class i18nGS {
         });
         return sheetsData;
     }
-    async upsertAllSheets(i18n) {
-        var e_1, _a, e_2, _b;
-        var _c, _d;
+    async upsertSheets(i18n) {
+        var e_1, _a;
+        var _b;
+        function getKeyOrientedNamespaceData(data) {
+            return Object.entries(data).reduce((acc, [locale, record]) => {
+                Object.entries(record).forEach(([key, value]) => {
+                    acc[key] = acc[key] || {};
+                    acc[key][locale] = value;
+                });
+                return acc;
+            }, {});
+        }
+        async function updateExistKey(sheet, data) {
+            var _a;
+            const rows = await sheet.getRows();
+            const clone = JSON.parse(JSON.stringify(data));
+            let updateCount = 0;
+            for (const row of rows) {
+                if (!(clone === null || clone === void 0 ? void 0 : clone[row.key]))
+                    continue;
+                for (const locale in clone[row.key]) {
+                    const columnIndex = sheet.headerValues.findIndex((header) => header === locale);
+                    const cell = sheet.getCell(row.rowIndex - 1, columnIndex);
+                    if (cell.value !== clone[row.key][locale]) {
+                        if (cell.value === null && !clone[row.key][locale])
+                            continue;
+                        loglevel_1.default.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
+                        cell.value = (_a = clone[row.key][locale]) !== null && _a !== void 0 ? _a : "";
+                        updateCount++;
+                    }
+                }
+                delete clone[row.key];
+            }
+            if (updateCount > 0)
+                await sheet.saveUpdatedCells();
+            loglevel_1.default.info(`Sheet '${sheet.title}' has updated ${updateCount} cells`);
+            return clone;
+        }
+        async function appendNonExistKey(sheet, data) {
+            const appendRows = Object.entries(data).map(([key, value]) => (Object.assign({ key }, value)));
+            if (appendRows.length > 0)
+                await sheet.addRows(appendRows).then(() => {
+                    if (loglevel_1.default.getLevel() <= loglevel_1.default.levels.DEBUG)
+                        appendRows.forEach((col) => loglevel_1.default.debug(`Appended row '${col.key}' to '${sheet.title}'`));
+                });
+            loglevel_1.default.info(`Sheet ${sheet.title} has appended ${appendRows.length} rows`);
+        }
         try {
-            for (var _e = __asyncValues(Object.entries(i18n)), _f; _f = await _e.next(), !_f.done;) {
-                const [namespace, data] = _f.value;
+            for (var _c = __asyncValues(Object.entries(i18n)), _d; _d = await _c.next(), !_d.done;) {
+                const [namespace, data] = _d.value;
                 const locales = Object.keys(data);
-                const newHeaderColumn = ["key", ...locales];
-                if (!((_c = this.doc.sheetsByTitle) === null || _c === void 0 ? void 0 : _c[namespace])) {
+                const defaultHeaderRow = ["key", ...locales];
+                const sheet = (_b = this.doc.sheetsByTitle) === null || _b === void 0 ? void 0 : _b[namespace];
+                if (!sheet) {
                     await this.doc.addSheet({
                         title: namespace,
-                        headerValues: newHeaderColumn,
+                        headerValues: defaultHeaderRow,
                     });
                     loglevel_1.default.info(`Created sheet '${namespace}'`);
                 }
                 loglevel_1.default.info(`Uploading to sheet '${namespace}'`);
-                const sheet = this.doc.sheetsByTitle[namespace];
                 await sheet.loadHeaderRow().catch(async () => {
-                    // if no header row, assume sheet is empty
-                    await sheet.setHeaderRow(newHeaderColumn);
+                    // if no header row, assume sheet is empty and insert default header
+                    await sheet.setHeaderRow(defaultHeaderRow);
                 });
                 if (sheet.headerValues[0] !== "key")
                     commander_1.program.error(`Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`);
-                newHeaderColumn.forEach((col) => {
+                defaultHeaderRow.forEach((col) => {
                     loglevel_1.default.debug(`Checking header column '${col}' is exist`);
                     if (!sheet.headerValues.includes(col))
                         commander_1.program.error(`Header '${col}' not found! Please include it in the sheet and try again`);
                 });
                 await sheet.loadCells();
-                const rows = await sheet.getRows();
-                const updateObject = Object.entries(data).reduce((acc, [locale, record]) => {
-                    Object.entries(record).forEach(([key, value]) => {
-                        acc[key] = acc[key] || {};
-                        acc[key][locale] = value;
-                    });
-                    return acc;
-                }, {});
-                // update existing keys
-                let updatedCells = 0;
-                try {
-                    for (var rows_1 = (e_2 = void 0, __asyncValues(rows)), rows_1_1; rows_1_1 = await rows_1.next(), !rows_1_1.done;) {
-                        const row = rows_1_1.value;
-                        if (!(updateObject === null || updateObject === void 0 ? void 0 : updateObject[row.key]))
-                            continue;
-                        for (const lang in updateObject[row.key]) {
-                            const columnIndex = sheet.headerValues.findIndex((col) => col === lang);
-                            const cell = await sheet.getCell(row.rowIndex - 1, columnIndex);
-                            if (cell.value !== updateObject[row.key][lang]) {
-                                if (cell.value === null && !updateObject[row.key][lang])
-                                    continue;
-                                loglevel_1.default.debug(`Updating ${namespace}/${row.key}/${lang}`);
-                                cell.value = (_d = updateObject[row.key][lang]) !== null && _d !== void 0 ? _d : "";
-                                updatedCells++;
-                            }
-                        }
-                        delete updateObject[row.key];
-                    }
-                }
-                catch (e_2_1) { e_2 = { error: e_2_1 }; }
-                finally {
-                    try {
-                        if (rows_1_1 && !rows_1_1.done && (_b = rows_1.return)) await _b.call(rows_1);
-                    }
-                    finally { if (e_2) throw e_2.error; }
-                }
-                if (updatedCells > 0)
-                    await sheet.saveUpdatedCells();
-                loglevel_1.default.info(`Sheet '${namespace}' has updated ${updatedCells} cells`);
-                // // update existing keys
-                // let updatedCells = 0;
-                // for await (const row of rows) {
-                //   for (const lang in data) {
-                //     // console.log(data?.[lang]?.[row.key]);
-                //     // if (data?.[lang]?.[row.key] === undefined || null) continue;
-                //     const columnIndex = sheet.headerValues.findIndex(
-                //       (col) => col === lang
-                //     );
-                //     const cell = await sheet.getCell(row.rowIndex - 1, columnIndex);
-                //     if (cell.value !== data[lang][row.key]) {
-                //       if (cell.value === null && !data[lang][row.key]) continue;
-                //       log.debug(`Updating ${namespace}/${row.key}/${lang}`);
-                //       cell.value = (data[lang][row.key] as string) ?? "";
-                //       updatedCells++;
-                //     }
-                //     delete data[lang][row.key];
-                //   }
-                // }
-                // if (updatedCells > 0) await sheet.saveUpdatedCells();
-                // log.info(`Sheet '${namespace}' has updated ${updatedCells} cells`);
-                // // append non-existing key
-                // const appendObject: { [key: string]: { [locale: string]: string } } =
-                //   Object.entries(data).reduce((acc, [locale, record]) => {
-                //     Object.entries(record).forEach(([key, value]) => {
-                //       acc[key] = acc[key] || {};
-                //       acc[key][locale] = value;
-                //     });
-                //     return acc;
-                //   }, {});
-                const appendArray = Object.entries(updateObject).map(([key, value]) => (Object.assign({ key }, value)));
-                if (appendArray.length > 0)
-                    await sheet.addRows(appendArray).then(() => {
-                        if (loglevel_1.default.getLevel() <= loglevel_1.default.levels.DEBUG)
-                            appendArray.forEach((col) => loglevel_1.default.debug(`Appended row '${col.key}' to '${namespace}'`));
-                    });
-                loglevel_1.default.info(`Sheet '${namespace}' has appended ${appendArray.length} rows`);
+                const keyData = getKeyOrientedNamespaceData(data);
+                const leftoverData = await updateExistKey(sheet, keyData);
+                await appendNonExistKey(sheet, leftoverData);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }
         finally {
             try {
-                if (_f && !_f.done && (_a = _e.return)) await _a.call(_e);
+                if (_d && !_d.done && (_a = _c.return)) await _a.call(_c);
             }
             finally { if (e_1) throw e_1.error; }
         }
