@@ -1,4 +1,4 @@
-import i18nGSConfig from "i18nGSConfig";
+import i18nGSConfig, { CredentialType } from "../types/i18nGSConfig";
 
 export const configFilename = "i18n-gs.config.js";
 
@@ -6,7 +6,7 @@ export const baseConfig: i18nGSConfig = {
   spreadsheet: {
     sheetId: undefined,
     credential: {
-      type: "serviceAccount",
+      type: CredentialType.ServiceAccount,
       path: undefined,
     },
   },

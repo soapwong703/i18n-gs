@@ -12,7 +12,7 @@ import {
 import { configFilename } from "./utils/constants";
 import I18nGS from "./classes/I18nGS";
 import log from "loglevel";
-import i18nGSConfig from "i18nGSConfig";
+import i18nGSConfig from "./types/i18nGSConfig";
 import { DeepPartial } from "DeepPartial";
 
 program

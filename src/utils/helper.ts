@@ -1,4 +1,4 @@
-import i18nGSConfig from "i18nGSConfig";
+import i18nGSConfig, { CredentialType } from "../types/i18nGSConfig";
 import { configFilename, baseConfig } from "./constants";
 
 import * as path from "path";
@@ -6,6 +6,7 @@ import * as fs from "fs";
 import { DeepPartial } from "DeepPartial";
 import log from "loglevel";
 import { program } from "commander";
+import { validateConfig } from "./validate";
 
 /**
  * Simple object check.
@@ -52,7 +53,7 @@ export function generateConfigFile(): i18nGSConfig {
     spreadsheet: {
       sheetId: "<your sheet id>",
       credential: {
-        type: "serviceAccount",
+        type: CredentialType.ServiceAccount,
         path: "<your credential file path>",
       },
     },
@@ -88,6 +89,28 @@ export function extractGoogleSheetError(err) {
   return `[GoogleAPIError:${code}] ${message}`;
 }
 
+// function validateConfig(config: DeepPartial<i18nGSConfig>) {
+//   // TODO verify config file
+//   if (
+//     !config?.spreadsheet?.sheetId ||
+//     typeof config?.spreadsheet?.sheetId !== "string"
+//   )
+//     program.error("Sheet Id is not valid!");
+//   if (!config?.spreadsheet?.credential)
+//     program.error("Credential is not provided!");
+//   if (
+//     !Object.values(CredentialType).includes(
+//       config?.spreadsheet?.credential?.type
+//     )
+//   )
+//     program.error("Credential type is not valid!");
+//   if (
+//     !config?.spreadsheet?.credential?.path ||
+//     typeof config?.spreadsheet?.credential?.path !== "string"
+//   )
+//     program.error("Credential path is not valid!");
+// }
+
 export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
   const pathname = path.resolve(configFilename);
   let fileConfig = undefined;
@@ -99,9 +122,9 @@ export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
     program.error(`'${configFilename}' is not defined at: '${pathname}'`);
   }
 
-  // TODO verify configfile
-
   if (initConfig) mergeDeep(config, fileConfig, inlineConfig);
+
+  validateConfig(config);
 
   const {
     logging: { level },

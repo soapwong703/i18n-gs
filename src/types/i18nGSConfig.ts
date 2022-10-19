@@ -1,6 +1,24 @@
-type Credential = {
+export enum CredentialType {
+  ServiceAccount = "serviceAccount",
   // apiKey method is readonly
-  type: "serviceAccount"; // TODO: | "apiKey" | "OAuth"
+  // TODO: | "apiKey" | "OAuth"
+}
+
+export enum KeyStyle {
+  Nested = "nested",
+  Flat = "flat",
+}
+
+export enum LogLevel {
+  Silent = "silent",
+  Error = "error",
+  Warn = "warn",
+  Info = "info",
+  Debug = "debug",
+}
+
+type Credential = {
+  type: CredentialType.ServiceAccount;
   path: string;
 };
 
