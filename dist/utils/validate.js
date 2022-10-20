@@ -31,7 +31,7 @@ function validateConfig(config) {
     });
     const { error } = schema.validate(config);
     if (error)
-        log_1.default.error(`Config ${error.message}`);
+        (0, log_1.exit)(`Config ${error.message}`);
 }
 exports.validateConfig = validateConfig;
 //# sourceMappingURL=validate.js.map

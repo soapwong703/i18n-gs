@@ -1,6 +1,7 @@
 import * as chalk from "chalk";
 import * as logger from "loglevel";
 import * as prefix from "loglevel-plugin-prefix";
+import { spinner } from "./spinner";
 
 const colors = {
   TRACE: chalk.magenta,
@@ -20,12 +21,12 @@ prefix.apply(logger, {
   },
 });
 
-const error: typeof logger.error = (...msg) => {
-  logger.error(...msg);
+const log = logger.getLogger("i18n-gs");
+
+export const exit: typeof logger.error = (...msg) => {
+  if (spinner.isSpinning) spinner.fail();
+  log.error(...msg);
   process.exit();
 };
-
-const log = logger.getLogger("i18n-gs");
-log.error = error;
 
 export default log;

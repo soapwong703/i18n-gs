@@ -87,7 +87,7 @@ function initConfig(inlineConfig) {
         fileConfig = require(pathname);
     }
     catch (err) {
-        log_1.default.error(`'${constants_1.configFilename}' is not defined at: '${pathname}'`);
+        (0, log_1.exit)(`'${constants_1.configFilename}' is not defined at: '${pathname}'`);
     }
     if (initConfig)
         mergeDeep(config, fileConfig, inlineConfig);

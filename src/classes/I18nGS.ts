@@ -1,15 +1,15 @@
 import {
   GoogleSpreadsheet,
+  GoogleSpreadsheetRow,
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
 import i18nGSConfig, { LogLevel } from "../types/i18nGSConfig";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { i18nRecord, NamespaceData, SheetsData } from "i18nGSData";
-import log from "../utils/log";
+import log, { exit } from "../utils/log";
 
 import { spinner } from "../utils/spinner";
-import * as ora from "ora";
 
 const { unflatten, flatten } = require("flat");
 
@@ -44,7 +44,7 @@ class i18nGS {
     try {
       credential = require(pathname);
     } catch {
-      log.error(`Credential file is not defined at: '${pathname}'`);
+      exit(`Credential file is not defined at: '${pathname}'`);
     }
 
     await this.doc.useServiceAccountAuth(credential);
@@ -56,15 +56,12 @@ class i18nGS {
   async readSheet(namespace: string): Promise<NamespaceData> {
     const sheet = this.doc.sheetsByTitle[namespace];
     if (!sheet) {
-      log.error(`Sheet '${namespace}' not found`);
+      log.warn(`Sheet '${namespace}' not found`);
       return undefined;
     }
     spinner.start(`Loading sheet '${namespace}'`);
 
-    const rows = await sheet.getRows().catch((err) => {
-      spinner.fail();
-      throw err;
-    });
+    const rows = await sheet.getRows();
 
     const locales = (
       this.config?.i18n?.locales?.includes ??
@@ -106,7 +103,7 @@ class i18nGS {
 
     log.debug("Selected namespaces:", namespaces);
 
-    if (namespaces.length === 0) log.error("There is no selected namespace!");
+    if (namespaces.length === 0) exit("There is no selected namespace!");
 
     const sheetsData: SheetsData = {};
 
@@ -139,15 +136,11 @@ class i18nGS {
       if (!fs.existsSync(`${path}/${locale}`))
         fs.mkdirSync(`${path}/${locale}`, { recursive: true });
 
-      // if no namespace file, make file
-      if (!fs.existsSync(`${path}/${locale}/${namespace}.json`))
-        log.info(`creating ${path}/${locale}/${namespace}.json`);
-      else log.info(`updating ${path}/${locale}/${namespace}.json`);
-
       // update namespace file, overwrite all data
       fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
         spaces: 2,
       });
+      log.info(`Updated ${path}/${locale}/${namespace}.json`);
     });
   }
 
@@ -162,7 +155,7 @@ class i18nGS {
       const data = fs.readJsonSync(path);
       return flatten(data);
     } catch (err) {
-      log.error(`Fail to open ${path}`);
+      exit(`File ${path} does not exists!`);
     }
   }
 
@@ -177,7 +170,7 @@ class i18nGS {
         locales: { includes: _localesIncludes, excludes: _localesExcludes },
       },
     } = this.config;
-    if (!fs.existsSync(path)) throw new Error(`Path '${path}' does not exist`);
+    if (!fs.existsSync(path)) exit(`Path '${path}' does not exist`);
 
     const sheetsData: SheetsData = {};
     const locales = (
@@ -185,7 +178,7 @@ class i18nGS {
       (await fs.readdirSync(path).filter((file) => !file.startsWith(".")))
     ).filter((locale) => !_localesExcludes?.includes(locale));
 
-    if (locales.length === 0) log.error("There is no selected locales!");
+    if (locales.length === 0) exit("No locale available!");
 
     locales.forEach((locale) => {
       const extensionRegExp = /\.\w+/g;
@@ -201,7 +194,7 @@ class i18nGS {
       log.debug(`Selected namespaces in '${locale}':`, namespaces);
 
       if (namespaces.length === 0)
-        log.error(`There is no available namespace in '${locale}'`);
+        exit(`There is no available namespace in '${locale}'`);
 
       namespaces.forEach((namespace) => {
         log.debug(`Loading namespace '${namespace}' in '${locale}'`);
@@ -303,6 +296,9 @@ class i18nGS {
         await sheet.setHeaderRow(defaultHeaderRow);
       });
 
+      if (!sheet.headerValues[0]) {
+        exit(`Header is invalid! Please set cell A1 to 'key'`);
+      }
       const headerNotFound = defaultHeaderRow.filter(
         (col) => !sheet.headerValues.includes(col)
       );
@@ -324,7 +320,7 @@ class i18nGS {
       const { appendedCount } = await appendNonExistKey(sheet, remainingData);
 
       spinner.succeed(
-        `Uploaded sheet '${namespace}': ${updatedCount} updated cells, ${appendedCount} appended rows`
+        `Uploaded sheet '${namespace}': updated ${updatedCount} cells, appended ${appendedCount} rows`
       );
     }
   }

@@ -37,7 +37,7 @@ class i18nGS {
             credential = require(pathname);
         }
         catch (_a) {
-            log_1.default.error(`Credential file is not defined at: '${pathname}'`);
+            (0, log_1.exit)(`Credential file is not defined at: '${pathname}'`);
         }
         await this.doc.useServiceAccountAuth(credential);
         await this.doc.loadInfo();
@@ -47,14 +47,11 @@ class i18nGS {
         var _a, _b, _c, _d, _e;
         const sheet = this.doc.sheetsByTitle[namespace];
         if (!sheet) {
-            log_1.default.error(`Sheet '${namespace}' not found`);
+            log_1.default.warn(`Sheet '${namespace}' not found`);
             return undefined;
         }
         spinner_1.spinner.start(`Loading sheet '${namespace}'`);
-        const rows = await sheet.getRows().catch((err) => {
-            spinner_1.spinner.fail();
-            throw err;
-        });
+        const rows = await sheet.getRows();
         const locales = ((_e = (_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.includes) !== null && _d !== void 0 ? _d : sheet.headerValues.slice(1)) !== null && _e !== void 0 ? _e : []).filter((locale) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(locale)); });
         if (locales.length === 0) {
             spinner_1.spinner.fail();
@@ -80,7 +77,7 @@ class i18nGS {
         const namespaces = ((_e = (_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.namespaces) === null || _c === void 0 ? void 0 : _c.includes) !== null && _d !== void 0 ? _d : Object.keys(this.doc.sheetsByTitle)) !== null && _e !== void 0 ? _e : []).filter((namespace) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.namespaces) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(namespace)); });
         log_1.default.debug("Selected namespaces:", namespaces);
         if (namespaces.length === 0)
-            log_1.default.error("There is no selected namespace!");
+            (0, log_1.exit)("There is no selected namespace!");
         const sheetsData = {};
         for (const namespace of namespaces) {
             const sheet = await this.readSheet(namespace);
@@ -107,15 +104,11 @@ class i18nGS {
             // if no folder, make directory
             if (!fs.existsSync(`${path}/${locale}`))
                 fs.mkdirSync(`${path}/${locale}`, { recursive: true });
-            // if no namespace file, make file
-            if (!fs.existsSync(`${path}/${locale}/${namespace}.json`))
-                log_1.default.info(`creating ${path}/${locale}/${namespace}.json`);
-            else
-                log_1.default.info(`updating ${path}/${locale}/${namespace}.json`);
             // update namespace file, overwrite all data
             fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
                 spaces: 2,
             });
+            log_1.default.info(`Updated ${path}/${locale}/${namespace}.json`);
         });
     }
     writeFiles(data) {
@@ -127,17 +120,17 @@ class i18nGS {
             return flatten(data);
         }
         catch (err) {
-            log_1.default.error(`Fail to open ${path}`);
+            (0, log_1.exit)(`File ${path} does not exists!`);
         }
     }
     async readFiles() {
         const { i18n: { path, namespaces: { includes: _namespacesIncludes, excludes: _namespacesExcludes, }, locales: { includes: _localesIncludes, excludes: _localesExcludes }, }, } = this.config;
         if (!fs.existsSync(path))
-            throw new Error(`Path '${path}' does not exist`);
+            (0, log_1.exit)(`Path '${path}' does not exist`);
         const sheetsData = {};
         const locales = (_localesIncludes !== null && _localesIncludes !== void 0 ? _localesIncludes : (await fs.readdirSync(path).filter((file) => !file.startsWith(".")))).filter((locale) => !(_localesExcludes === null || _localesExcludes === void 0 ? void 0 : _localesExcludes.includes(locale)));
         if (locales.length === 0)
-            log_1.default.error("There is no selected locales!");
+            (0, log_1.exit)("No locale available!");
         locales.forEach((locale) => {
             const extensionRegExp = /\.\w+/g;
             const files = fs
@@ -146,7 +139,7 @@ class i18nGS {
             const namespaces = (_namespacesIncludes !== null && _namespacesIncludes !== void 0 ? _namespacesIncludes : files.map((filename) => filename.replace(extensionRegExp, ""))).filter((namespace) => !(_namespacesExcludes === null || _namespacesExcludes === void 0 ? void 0 : _namespacesExcludes.includes(namespace)));
             log_1.default.debug(`Selected namespaces in '${locale}':`, namespaces);
             if (namespaces.length === 0)
-                log_1.default.error(`There is no available namespace in '${locale}'`);
+                (0, log_1.exit)(`There is no available namespace in '${locale}'`);
             namespaces.forEach((namespace) => {
                 log_1.default.debug(`Loading namespace '${namespace}' in '${locale}'`);
                 const data = this.readFile(`${path}/${locale}/${namespace}.json`);
@@ -227,6 +220,9 @@ class i18nGS {
                     // if no header row, assume sheet is empty and insert default header
                     await sheet.setHeaderRow(defaultHeaderRow);
                 });
+                if (!sheet.headerValues[0]) {
+                    (0, log_1.exit)(`Header is invalid! Please set cell A1 to 'key'`);
+                }
                 const headerNotFound = defaultHeaderRow.filter((col) => !sheet.headerValues.includes(col));
                 if (headerNotFound.length > 0) {
                     log_1.default.warn(`Header '${headerNotFound.join(",")}' not found! These locales will be skipped`);
@@ -235,7 +231,7 @@ class i18nGS {
                 const keyData = getKeyOrientedNamespaceData(data);
                 const { remainingData, updatedCount } = await updateExistKey(sheet, keyData);
                 const { appendedCount } = await appendNonExistKey(sheet, remainingData);
-                spinner_1.spinner.succeed(`Uploaded sheet '${namespace}': ${updatedCount} updated cells, ${appendedCount} appended rows`);
+                spinner_1.spinner.succeed(`Uploaded sheet '${namespace}': updated ${updatedCount} cells, appended ${appendedCount} rows`);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }

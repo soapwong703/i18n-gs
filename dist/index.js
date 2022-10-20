@@ -8,7 +8,6 @@ const helper_1 = require("./utils/helper");
 const constants_1 = require("./utils/constants");
 const I18nGS_1 = require("./classes/I18nGS");
 const log_1 = require("./utils/log");
-const spinner_1 = require("./utils/spinner");
 commander_1.program
     .command("init")
     .description("Initialize the project with config file")
@@ -16,7 +15,7 @@ commander_1.program
     const pathname = path.resolve(constants_1.configFilename);
     const configFile = fs.existsSync(pathname);
     if (configFile)
-        return log_1.default.error(`A '${constants_1.configFilename}' file is already defined at: '${pathname}'`);
+        return (0, log_1.exit)(`A '${constants_1.configFilename}' file is already defined at: '${pathname}'`);
     (0, helper_1.generateConfigFile)();
 });
 commander_1.program
@@ -44,16 +43,14 @@ commander_1.program
         await i18nGS.connect();
         const sheets = await i18nGS.readSheets();
         if (Object.values(sheets).length === 0)
-            log_1.default.error(`No sheets available for download!`);
+            (0, log_1.exit)(`No sheets available for download!`);
         i18nGS.writeFiles(sheets);
         log_1.default.info(`Finished downloading ${Object.keys(sheets).length} sheets`);
     }
     catch (err) {
-        // log.error(`Download failed!`);
-        spinner_1.spinner.fail();
         if (!!(0, helper_1.extractGoogleSheetError)(err))
-            return log_1.default.error((0, helper_1.extractGoogleSheetError)(err));
-        return log_1.default.error(err);
+            return (0, log_1.exit)((0, helper_1.extractGoogleSheetError)(err));
+        return (0, log_1.exit)(err);
     }
 });
 commander_1.program
@@ -84,11 +81,9 @@ commander_1.program
         log_1.default.info(`Finished uploading ${Object.keys(sheetsData).length} sheets`);
     }
     catch (err) {
-        // log.error(`Upload failed!`);
-        spinner_1.spinner.fail();
         if (!!(0, helper_1.extractGoogleSheetError)(err))
-            return log_1.default.error((0, helper_1.extractGoogleSheetError)(err));
-        return log_1.default.error(err);
+            return (0, log_1.exit)((0, helper_1.extractGoogleSheetError)(err));
+        return (0, log_1.exit)(err);
     }
 });
 commander_1.program.parse();

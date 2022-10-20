@@ -5,7 +5,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { DeepPartial } from "DeepPartial";
 import { validateConfig } from "./validate";
-import log from "./log";
+import log, { exit } from "./log";
 
 /**
  * Simple object check.
@@ -96,7 +96,7 @@ export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
   try {
     fileConfig = require(pathname);
   } catch (err) {
-    log.error(`'${configFilename}' is not defined at: '${pathname}'`);
+    exit(`'${configFilename}' is not defined at: '${pathname}'`);
   }
 
   if (initConfig) mergeDeep(config, fileConfig, inlineConfig);
