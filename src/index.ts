@@ -12,9 +12,8 @@ import {
 import { configFilename } from "./utils/constants";
 import I18nGS from "./classes/I18nGS";
 import i18nGSConfig from "./types/i18nGSConfig";
-import { DeepPartial } from "DeepPartial";
+import { DeepPartial } from "./types/DeepPartial";
 import log, { exit } from "./utils/log";
-import { spinner } from "./utils/spinner";
 
 program
   .command("init")
