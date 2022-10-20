@@ -75,7 +75,7 @@ class i18nGS {
       return undefined;
     }
 
-    log.info(`Loading sheet '${namespace}' with locale '${locales}'`);
+    log.debug(`Loading sheet '${namespace}' with locale '${locales}'`);
     let namespaceData: NamespaceData = {};
     rows.forEach((row) => {
       locales.forEach((langKey) => {
@@ -196,7 +196,7 @@ class i18nGS {
         log.error(`There is no available namespace in '${locale}'`);
 
       namespaces.forEach((namespace) => {
-        log.info(`Loading namespace '${namespace}' in '${locale}'`);
+        log.debug(`Loading namespace '${namespace}' in '${locale}'`);
         const data = this.readFile(`${path}/${locale}/${namespace}.json`);
         if (!data) return;
         sheetsData[namespace] = sheetsData[namespace] || {};
@@ -270,7 +270,7 @@ class i18nGS {
             );
         });
 
-      log.info(`Sheet ${sheet.title} has appended ${appendRows.length} rows`);
+      log.info(`Sheet '${sheet.title}' has appended ${appendRows.length} rows`);
     }
 
     for await (const [namespace, data] of Object.entries(i18n)) {

@@ -62,7 +62,7 @@ program
 
       log.info(`Finished downloading ${Object.keys(sheets).length} sheets`);
     } catch (err) {
-      log.error(`Download failed!`);
+      // log.error(`Download failed!`);
       if (!!extractGoogleSheetError(err))
         return log.error(extractGoogleSheetError(err));
       return log.error(err);
@@ -99,7 +99,7 @@ program
 
       log.info(`Finished uploading ${Object.keys(sheetsData).length} sheets`);
     } catch (err) {
-      log.error(`Upload failed!`);
+      // log.error(`Upload failed!`);
       if (!!extractGoogleSheetError(err))
         return log.error(extractGoogleSheetError(err));
       return log.error(err);
