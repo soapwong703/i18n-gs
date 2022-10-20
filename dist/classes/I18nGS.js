@@ -8,9 +8,11 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const google_spreadsheet_1 = require("google-spreadsheet");
+const i18nGSConfig_1 = require("../types/i18nGSConfig");
 const path = require("path");
 const fs = require("fs-extra");
 const log_1 = require("../utils/log");
+const spinner_1 = require("../utils/spinner");
 const { unflatten, flatten } = require("flat");
 class i18nGS {
     constructor(config) {
@@ -48,16 +50,17 @@ class i18nGS {
             log_1.default.error(`Sheet '${namespace}' not found`);
             return undefined;
         }
+        spinner_1.spinner.start(`Loading sheet '${namespace}'`);
         const rows = await sheet.getRows().catch((err) => {
-            log_1.default.error(`Loading Sheet '${namespace}'`);
+            spinner_1.spinner.fail();
             throw err;
         });
         const locales = ((_e = (_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.includes) !== null && _d !== void 0 ? _d : sheet.headerValues.slice(1)) !== null && _e !== void 0 ? _e : []).filter((locale) => { var _a, _b, _c, _d; return !((_d = (_c = (_b = (_a = this.config) === null || _a === void 0 ? void 0 : _a.i18n) === null || _b === void 0 ? void 0 : _b.locales) === null || _c === void 0 ? void 0 : _c.excludes) === null || _d === void 0 ? void 0 : _d.includes(locale)); });
         if (locales.length === 0) {
-            log_1.default.error(`No locale available in ${namespace}`);
+            spinner_1.spinner.fail();
+            log_1.default.warn(`No locale available in ${namespace}`);
             return undefined;
         }
-        log_1.default.info(`Loading sheet '${namespace}' with locale '${locales}'`);
         let namespaceData = {};
         rows.forEach((row) => {
             locales.forEach((langKey) => {
@@ -66,6 +69,10 @@ class i18nGS {
                 namespaceData[langKey][row.key] = (_a = row[langKey]) !== null && _a !== void 0 ? _a : "";
             });
         });
+        if (this.config.logging.level === i18nGSConfig_1.LogLevel.Debug)
+            spinner_1.spinner.succeed(`Loaded sheet '${namespace}' with locale '${locales}'`);
+        else
+            spinner_1.spinner.stop();
         return namespaceData;
     }
     async readSheets() {
@@ -141,7 +148,7 @@ class i18nGS {
             if (namespaces.length === 0)
                 log_1.default.error(`There is no available namespace in '${locale}'`);
             namespaces.forEach((namespace) => {
-                log_1.default.info(`Loading namespace '${namespace}' in '${locale}'`);
+                log_1.default.debug(`Loading namespace '${namespace}' in '${locale}'`);
                 const data = this.readFile(`${path}/${locale}/${namespace}.json`);
                 if (!data)
                     return;
@@ -170,27 +177,28 @@ class i18nGS {
             var _a;
             const rows = await sheet.getRows();
             const clone = JSON.parse(JSON.stringify(data));
-            let updateCount = 0;
+            let updatedCount = 0;
             for (const row of rows) {
                 if (!(clone === null || clone === void 0 ? void 0 : clone[row.key]))
                     continue;
                 for (const locale in clone[row.key]) {
                     const columnIndex = sheet.headerValues.findIndex((header) => header === locale);
+                    if (columnIndex === -1)
+                        continue;
                     const cell = sheet.getCell(row.rowIndex - 1, columnIndex);
                     if (cell.value !== clone[row.key][locale]) {
                         if (cell.value === null && !clone[row.key][locale])
                             continue;
                         log_1.default.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
                         cell.value = (_a = clone[row.key][locale]) !== null && _a !== void 0 ? _a : "";
-                        updateCount++;
+                        updatedCount++;
                     }
                 }
                 delete clone[row.key];
             }
-            if (updateCount > 0)
+            if (updatedCount > 0)
                 await sheet.saveUpdatedCells();
-            log_1.default.info(`Sheet '${sheet.title}' has updated ${updateCount} cells`);
-            return clone;
+            return { remainingData: clone, updatedCount };
         }
         async function appendNonExistKey(sheet, data) {
             const appendRows = Object.entries(data).map(([key, value]) => (Object.assign({ key }, value)));
@@ -199,7 +207,7 @@ class i18nGS {
                     if (log_1.default.getLevel() <= log_1.default.levels.DEBUG)
                         appendRows.forEach((col) => log_1.default.debug(`Appended row '${col.key}' to '${sheet.title}'`));
                 });
-            log_1.default.info(`Sheet ${sheet.title} has appended ${appendRows.length} rows`);
+            return { appendedCount: appendRows.length };
         }
         try {
             for (var _c = __asyncValues(Object.entries(i18n)), _d; _d = await _c.next(), !_d.done;) {
@@ -214,22 +222,20 @@ class i18nGS {
                     });
                     log_1.default.info(`Created sheet '${namespace}'`);
                 }
-                log_1.default.info(`Uploading to sheet '${namespace}'`);
+                spinner_1.spinner.start(`Uploading sheet '${namespace}'`);
                 await sheet.loadHeaderRow().catch(async () => {
                     // if no header row, assume sheet is empty and insert default header
                     await sheet.setHeaderRow(defaultHeaderRow);
                 });
-                if (sheet.headerValues[0] !== "key")
-                    log_1.default.error(`Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`);
-                defaultHeaderRow.forEach((col) => {
-                    log_1.default.debug(`Checking header column '${col}' is exist`);
-                    if (!sheet.headerValues.includes(col))
-                        log_1.default.error(`Header '${col}' not found! Please include it in the sheet and try again`);
-                });
+                const headerNotFound = defaultHeaderRow.filter((col) => !sheet.headerValues.includes(col));
+                if (headerNotFound.length > 0) {
+                    log_1.default.warn(`Header '${headerNotFound.join(",")}' not found! These locales will be skipped`);
+                }
                 await sheet.loadCells();
                 const keyData = getKeyOrientedNamespaceData(data);
-                const leftoverData = await updateExistKey(sheet, keyData);
-                await appendNonExistKey(sheet, leftoverData);
+                const { remainingData, updatedCount } = await updateExistKey(sheet, keyData);
+                const { appendedCount } = await appendNonExistKey(sheet, remainingData);
+                spinner_1.spinner.succeed(`Uploaded sheet '${namespace}': ${updatedCount} updated cells, ${appendedCount} appended rows`);
             }
         }
         catch (e_1_1) { e_1 = { error: e_1_1 }; }

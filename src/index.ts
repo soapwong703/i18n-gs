@@ -14,6 +14,7 @@ import I18nGS from "./classes/I18nGS";
 import i18nGSConfig from "./types/i18nGSConfig";
 import { DeepPartial } from "DeepPartial";
 import log from "./utils/log";
+import { spinner } from "./utils/spinner";
 
 program
   .command("init")
@@ -63,6 +64,7 @@ program
       log.info(`Finished downloading ${Object.keys(sheets).length} sheets`);
     } catch (err) {
       // log.error(`Download failed!`);
+      spinner.fail();
       if (!!extractGoogleSheetError(err))
         return log.error(extractGoogleSheetError(err));
       return log.error(err);
@@ -100,6 +102,7 @@ program
       log.info(`Finished uploading ${Object.keys(sheetsData).length} sheets`);
     } catch (err) {
       // log.error(`Upload failed!`);
+      spinner.fail();
       if (!!extractGoogleSheetError(err))
         return log.error(extractGoogleSheetError(err));
       return log.error(err);

@@ -1,13 +1,15 @@
-import { program } from "commander";
 import {
   GoogleSpreadsheet,
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
-import i18nGSConfig from "i18nGSConfig";
+import i18nGSConfig, { LogLevel } from "../types/i18nGSConfig";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { i18nRecord, NamespaceData, SheetsData } from "i18nGSData";
 import log from "../utils/log";
+
+import { spinner } from "../utils/spinner";
+import * as ora from "ora";
 
 const { unflatten, flatten } = require("flat");
 
@@ -57,9 +59,10 @@ class i18nGS {
       log.error(`Sheet '${namespace}' not found`);
       return undefined;
     }
+    spinner.start(`Loading sheet '${namespace}'`);
 
     const rows = await sheet.getRows().catch((err) => {
-      log.error(`Loading Sheet '${namespace}'`);
+      spinner.fail();
       throw err;
     });
 
@@ -71,11 +74,11 @@ class i18nGS {
       (locale) => !this.config?.i18n?.locales?.excludes?.includes(locale)
     );
     if (locales.length === 0) {
-      log.error(`No locale available in ${namespace}`);
+      spinner.fail();
+      log.warn(`No locale available in ${namespace}`);
       return undefined;
     }
 
-    log.debug(`Loading sheet '${namespace}' with locale '${locales}'`);
     let namespaceData: NamespaceData = {};
     rows.forEach((row) => {
       locales.forEach((langKey) => {
@@ -83,6 +86,11 @@ class i18nGS {
         namespaceData[langKey][row.key] = row[langKey] ?? "";
       });
     });
+
+    if (this.config.logging.level === LogLevel.Debug)
+      spinner.succeed(`Loaded sheet '${namespace}' with locale '${locales}'`);
+    else spinner.stop();
+
     return namespaceData;
   }
 
@@ -226,37 +234,40 @@ class i18nGS {
     async function updateExistKey(
       sheet: GoogleSpreadsheetWorksheet,
       data: ReturnType<typeof getKeyOrientedNamespaceData>
-    ): Promise<ReturnType<typeof getKeyOrientedNamespaceData>> {
+    ): Promise<{
+      remainingData: ReturnType<typeof getKeyOrientedNamespaceData>;
+      updatedCount: number;
+    }> {
       const rows = await sheet.getRows();
       const clone = JSON.parse(JSON.stringify(data));
-      let updateCount = 0;
+      let updatedCount = 0;
       for (const row of rows) {
         if (!clone?.[row.key]) continue;
         for (const locale in clone[row.key]) {
           const columnIndex = sheet.headerValues.findIndex(
             (header) => header === locale
           );
+          if (columnIndex === -1) continue;
           const cell = sheet.getCell(row.rowIndex - 1, columnIndex);
           if (cell.value !== clone[row.key][locale]) {
             if (cell.value === null && !clone[row.key][locale]) continue;
             log.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
             cell.value = clone[row.key][locale] ?? "";
-            updateCount++;
+            updatedCount++;
           }
         }
         delete clone[row.key];
       }
 
-      if (updateCount > 0) await sheet.saveUpdatedCells();
-      log.info(`Sheet '${sheet.title}' has updated ${updateCount} cells`);
+      if (updatedCount > 0) await sheet.saveUpdatedCells();
 
-      return clone;
+      return { remainingData: clone, updatedCount };
     }
 
     async function appendNonExistKey(
       sheet: GoogleSpreadsheetWorksheet,
       data: ReturnType<typeof getKeyOrientedNamespaceData>
-    ) {
+    ): Promise<{ appendedCount: number }> {
       const appendRows = Object.entries(data).map(([key, value]) => ({
         key,
         ...value,
@@ -270,7 +281,7 @@ class i18nGS {
             );
         });
 
-      log.info(`Sheet '${sheet.title}' has appended ${appendRows.length} rows`);
+      return { appendedCount: appendRows.length };
     }
 
     for await (const [namespace, data] of Object.entries(i18n)) {
@@ -285,31 +296,36 @@ class i18nGS {
         });
         log.info(`Created sheet '${namespace}'`);
       }
-      log.info(`Uploading to sheet '${namespace}'`);
+      spinner.start(`Uploading sheet '${namespace}'`);
 
       await sheet.loadHeaderRow().catch(async () => {
         // if no header row, assume sheet is empty and insert default header
         await sheet.setHeaderRow(defaultHeaderRow);
       });
 
-      if (sheet.headerValues[0] !== "key")
-        log.error(
-          `Sheet '${namespace}' has invalid value in header, please set cell A1 value to 'key'`
+      const headerNotFound = defaultHeaderRow.filter(
+        (col) => !sheet.headerValues.includes(col)
+      );
+      if (headerNotFound.length > 0) {
+        log.warn(
+          `Header '${headerNotFound.join(
+            ","
+          )}' not found! These locales will be skipped`
         );
-
-      defaultHeaderRow.forEach((col) => {
-        log.debug(`Checking header column '${col}' is exist`);
-        if (!sheet.headerValues.includes(col))
-          log.error(
-            `Header '${col}' not found! Please include it in the sheet and try again`
-          );
-      });
+      }
 
       await sheet.loadCells();
 
       const keyData = getKeyOrientedNamespaceData(data);
-      const leftoverData = await updateExistKey(sheet, keyData);
-      await appendNonExistKey(sheet, leftoverData);
+      const { remainingData, updatedCount } = await updateExistKey(
+        sheet,
+        keyData
+      );
+      const { appendedCount } = await appendNonExistKey(sheet, remainingData);
+
+      spinner.succeed(
+        `Uploaded sheet '${namespace}': ${updatedCount} updated cells, ${appendedCount} appended rows`
+      );
     }
   }
 }
