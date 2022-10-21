@@ -22,12 +22,12 @@ class i18nGS {
     this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId);
 
     if (this.config?.i18n?.namespaces?.excludes)
-      log.info(
+      log.debug(
         `Excluding namespaces:`,
         this.config?.i18n?.namespaces?.excludes
       );
     if (this.config?.i18n?.locales?.excludes)
-      log.info(`Excluding locales:`, this.config?.i18n?.locales?.excludes);
+      log.debug(`Excluding locales:`, this.config?.i18n?.locales?.excludes);
   }
 
   async connect() {
@@ -140,7 +140,7 @@ class i18nGS {
       fs.writeJSONSync(`${path}/${locale}/${namespace}.json`, i18n, {
         spaces: 2,
       });
-      log.info(`Updated ${path}/${locale}/${namespace}.json`);
+      log.debug(`Updated ${path}/${locale}/${namespace}.json`);
     });
   }
 
@@ -280,14 +280,14 @@ class i18nGS {
     for await (const [namespace, data] of Object.entries(i18n)) {
       const locales = Object.keys(data);
       const defaultHeaderRow = ["key", ...locales];
-      const sheet = this.doc.sheetsByTitle?.[namespace];
+      let sheet = this.doc.sheetsByTitle?.[namespace];
 
       if (!sheet) {
-        await this.doc.addSheet({
+        sheet = await this.doc.addSheet({
           title: namespace,
           headerValues: defaultHeaderRow,
         });
-        log.info(`Created sheet '${namespace}'`);
+        log.debug(`Created sheet '${namespace}'`);
       }
       spinner.start(`Uploading sheet '${namespace}'`);
 

@@ -1,4 +1,5 @@
 node_modules
+locales
 
 # i18n-gs configs
 credential.json

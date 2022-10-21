@@ -2,7 +2,7 @@ const { spawn, exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
-const testPath = "./test";
+const testPath = path.resolve("test");
 
 beforeAll(() => {
   if (fs.existsSync(path.join(testPath, "i18n-gs.config.js")))
@@ -45,6 +45,15 @@ describe("init", () => {
   });
 
   test("can reject to config file already exists", async () => {
-    expect(i18ngsExec("i18ngs init")).rejects.toThrow();
+    await expect(i18ngsExec("i18ngs init")).rejects.toThrow();
   });
+});
+
+describe("upload", () => {});
+
+describe("download", () => {});
+
+afterAll(() => {
+  if (fs.existsSync(path.join(testPath, "i18n-gs.config.js")))
+    fs.rmSync(path.join(testPath, "i18n-gs.config.js"));
 });
