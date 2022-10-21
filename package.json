@@ -16,7 +16,7 @@
   "scripts": {
     "watch": "tsc --watch",
     "build": "rm -rf lib && tsc",
-    "test": "jest"
+    "test": "jest -i"
   },
   "dependencies": {
     "chalk": "^4.1.2",

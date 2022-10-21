@@ -6,4 +6,4 @@ credential.json
 i18n-gs.config.js
 
 # test files
-test/*/**
+test/data

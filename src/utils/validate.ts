@@ -4,7 +4,7 @@ import i18nGSConfig, {
   LogLevel,
 } from "../types/i18nGSConfig";
 import * as Joi from "joi";
-import log, { exit } from "./log";
+import { exit } from "./log";
 
 export function validateConfig(config: i18nGSConfig) {
   const schema = Joi.object<i18nGSConfig>({
@@ -32,7 +32,8 @@ export function validateConfig(config: i18nGSConfig) {
         LogLevel.Error,
         LogLevel.Warn,
         LogLevel.Info,
-        LogLevel.Debug
+        LogLevel.Debug,
+        LogLevel.Silent
       ),
     }),
   });

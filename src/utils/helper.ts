@@ -1,4 +1,4 @@
-import i18nGSConfig, { CredentialType } from "../types/i18nGSConfig";
+import i18nGSConfig, { CredentialType, LogLevel } from "../types/i18nGSConfig";
 import { configFilename, baseConfig } from "./constants";
 
 import * as path from "path";
@@ -47,7 +47,9 @@ export function removeEmptyProperty(obj) {
   });
 }
 
-export function generateConfigFile(): i18nGSConfig {
+export function generateConfigFile(
+  config?: DeepPartial<i18nGSConfig>
+): i18nGSConfig {
   const configTemplate: i18nGSConfig = {
     spreadsheet: {
       sheetId: "<your sheet id>",
@@ -61,7 +63,7 @@ export function generateConfigFile(): i18nGSConfig {
       keyStyle: "nested",
     },
     logging: {
-      level: "info",
+      level: LogLevel.Info,
     },
   };
 

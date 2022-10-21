@@ -9,17 +9,21 @@ import * as fs from "fs-extra";
 import { i18nRecord, NamespaceData, SheetsData } from "i18nGSData";
 import log, { exit } from "../utils/log";
 
-import { spinner } from "../utils/spinner";
+import ora = require("ora");
 
 const { unflatten, flatten } = require("flat");
 
 class i18nGS {
-  protected config: i18nGSConfig;
-  protected doc: GoogleSpreadsheet;
+  private config: i18nGSConfig;
+  private doc: GoogleSpreadsheet;
+  private spinner: ora.Ora;
 
-  constructor(config) {
+  constructor(config: i18nGSConfig) {
     this.config = config;
     this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId);
+    this.spinner = ora({
+      isSilent: config?.logging?.level === LogLevel.Silent,
+    });
 
     if (this.config?.i18n?.namespaces?.excludes)
       log.debug(
@@ -59,7 +63,7 @@ class i18nGS {
       log.warn(`Sheet '${namespace}' not found`);
       return undefined;
     }
-    spinner.start(`Loading sheet '${namespace}'`);
+    this.spinner.start(`Loading sheet '${namespace}'`);
 
     const rows = await sheet.getRows();
 
@@ -71,7 +75,7 @@ class i18nGS {
       (locale) => !this.config?.i18n?.locales?.excludes?.includes(locale)
     );
     if (locales.length === 0) {
-      spinner.fail();
+      this.spinner.fail();
       log.warn(`No locale available in ${namespace}`);
       return undefined;
     }
@@ -85,8 +89,10 @@ class i18nGS {
     });
 
     if (this.config.logging.level === LogLevel.Debug)
-      spinner.succeed(`Loaded sheet '${namespace}' with locale '${locales}'`);
-    else spinner.stop();
+      this.spinner.succeed(
+        `Loaded sheet '${namespace}' with locale '${locales}'`
+      );
+    else this.spinner.stop();
 
     return namespaceData;
   }
@@ -289,7 +295,7 @@ class i18nGS {
         });
         log.debug(`Created sheet '${namespace}'`);
       }
-      spinner.start(`Uploading sheet '${namespace}'`);
+      this.spinner.start(`Uploading sheet '${namespace}'`);
 
       await sheet.loadHeaderRow().catch(async () => {
         // if no header row, assume sheet is empty and insert default header
@@ -319,7 +325,7 @@ class i18nGS {
       );
       const { appendedCount } = await appendNonExistKey(sheet, remainingData);
 
-      spinner.succeed(
+      this.spinner.succeed(
         `Uploaded sheet '${namespace}': updated ${updatedCount} cells, appended ${appendedCount} rows`
       );
     }
