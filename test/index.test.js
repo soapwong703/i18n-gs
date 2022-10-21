@@ -56,7 +56,7 @@ describe("command line test", () => {
     await expect(i18ngsExec("i18ngs init")).rejects.toThrow();
   });
 
-  test.skip("can download sheets", async () => {
+  test("can download sheets", async () => {
     const config = require(path.resolve(rootPath, configFilename));
     config.logging.level = "silent";
     fs.writeFileSync(
