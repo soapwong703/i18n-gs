@@ -171,7 +171,7 @@ module.exports = {
 
 ## i18n.keyStyle
 
-Style of the i18n key on google sheet
+Style of the i18n key on local file
 
 - Type: `'nested' | 'flat'`
 - Example:
