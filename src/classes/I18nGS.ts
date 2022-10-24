@@ -34,6 +34,10 @@ class i18nGS {
       log.debug(`Excluding locales:`, this.config?.i18n?.locales?.excludes);
   }
 
+  failSpinner() {
+    if (this.spinner.isSpinning) this.spinner.fail();
+  }
+
   async connect() {
     switch (this.config.spreadsheet.credential.type) {
       case "serviceAccount":
@@ -48,6 +52,7 @@ class i18nGS {
     try {
       credential = require(pathname);
     } catch {
+      this.failSpinner();
       exit(`Credential file is not defined at: '${pathname}'`);
     }
 
@@ -161,6 +166,7 @@ class i18nGS {
       const data = fs.readJsonSync(path);
       return flatten(data);
     } catch (err) {
+      this.failSpinner();
       exit(`File ${path} does not exists!`);
     }
   }

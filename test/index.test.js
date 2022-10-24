@@ -93,6 +93,6 @@ describe("command line test", () => {
   });
 });
 
-// afterAll(() => {
-//   resetTestData();
-// });
+afterAll(() => {
+  resetTestData();
+});

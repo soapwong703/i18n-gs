@@ -62,6 +62,7 @@ program
 
       log.info(`Finished downloading ${Object.keys(sheets).length} sheets`);
     } catch (err) {
+      i18nGS.failSpinner();
       if (!!extractGoogleSheetError(err))
         return exit(extractGoogleSheetError(err));
       return exit(err);
@@ -98,6 +99,7 @@ program
 
       log.info(`Finished uploading ${Object.keys(sheetsData).length} sheets`);
     } catch (err) {
+      i18nGS.failSpinner();
       if (!!extractGoogleSheetError(err))
         return exit(extractGoogleSheetError(err));
       return exit(err);
