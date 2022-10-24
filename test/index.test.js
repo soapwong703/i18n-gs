@@ -1,4 +1,4 @@
-const { spawn, exec } = require("child_process");
+const { exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
@@ -14,6 +14,10 @@ function resetTestData() {
 }
 
 beforeAll(() => {
+  resetTestData();
+});
+
+afterAll(() => {
   resetTestData();
 });
 
@@ -91,8 +95,4 @@ describe("command line test", () => {
 
     await expect(i18ngsExec("i18ngs upload")).resolves.toBe("");
   });
-});
-
-afterAll(() => {
-  resetTestData();
 });
