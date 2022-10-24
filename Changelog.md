@@ -7,13 +7,9 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [1.0.0] - 2022-10-24
+
 ### Added
-
-- config type
-- config file template
-- command executor
-
-## [0.0.1] - 2022-06-22
 
 - initial release
 
@@ -24,5 +20,5 @@ and this project adheres to [Semantic Versioning].
 
 <!-- Versions -->
 
-[unreleased]: https://github.com/soapwong703/i18n-gs/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/soapwong703/i18n-gs/releases/tag/v0.0.1
+[unreleased]: https://github.com/soapwong703/i18n-gs/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/soapwong703/i18n-gs/releases/tag/v1.0.0
