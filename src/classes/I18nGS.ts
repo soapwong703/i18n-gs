@@ -1,6 +1,5 @@
 import {
   GoogleSpreadsheet,
-  GoogleSpreadsheetRow,
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
 import i18nGSConfig, { LogLevel } from "../types/i18nGSConfig";

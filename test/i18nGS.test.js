@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { default: I18nGS } = require("../lib/classes/I18nGS.js");
+const { LogLevel } = require("../lib/types/i18nGSConfig.js");
 
 let config = undefined;
 
@@ -8,7 +9,9 @@ if (fs.existsSync(path.resolve("i18n-gs.config.js")))
   config = require("../i18n-gs.config.js");
 
 const testPath = path.resolve(__dirname, "data");
+
 config.i18n.path = path.join(testPath, "locales");
+config.logging.level = LogLevel.Silent;
 
 const describeIf = config ? describe : describe.skip;
 
