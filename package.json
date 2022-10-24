@@ -7,7 +7,8 @@
     "i18n",
     "download",
     "upload",
-    "google-sheets",
+    "google-sheet",
+    "google-spreadsheet",
     "command-line-tool"
   ],
   "main": "lib/index.js",

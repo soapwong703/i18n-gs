@@ -9,8 +9,6 @@ and this project adheres to [Semantic Versioning].
 
 ## [1.0.0] - 2022-10-24
 
-### Added
-
 - initial release
 
 <!-- Links -->
