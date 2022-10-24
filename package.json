@@ -16,7 +16,8 @@
   "scripts": {
     "watch": "tsc --watch",
     "build": "rm -rf lib && tsc",
-    "test": "jest -i"
+    "test": "jest -i",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "chalk": "^4.1.2",
