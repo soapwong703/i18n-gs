@@ -33,7 +33,7 @@ program
 program
   .command("download [namespaces...]")
   .description("Download the files from google sheet")
-  .option("-l, --locales <locales...>")
+  .option("-l, --locales <locales...>", "locales to be included")
   .action(async (namespaces, options) => {
     const inlineConfig: DeepPartial<i18nGSConfig> = {
       i18n: {
@@ -71,8 +71,8 @@ program
 
 program
   .command("upload [namespaces...]")
-  .description("Upload the files to google sheet")
-  .option("-l, --locales <locales...>")
+  .description("Upload the files to google sheet (only support flat key style)")
+  .option("-l, --locales <locales...>", "locales to be included")
   .action(async (namespaces, options) => {
     const inlineConfig: DeepPartial<i18nGSConfig> = {
       i18n: {

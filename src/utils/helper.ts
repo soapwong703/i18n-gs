@@ -1,4 +1,8 @@
-import i18nGSConfig, { CredentialType, LogLevel } from "../types/i18nGSConfig";
+import i18nGSConfig, {
+  CredentialType,
+  KeyStyle,
+  LogLevel,
+} from "../types/i18nGSConfig";
 import { configFilename, baseConfig } from "./constants";
 
 import * as path from "path";
@@ -60,7 +64,7 @@ export function generateConfigFile(
     },
     i18n: {
       path: "<your locale directory path>",
-      keyStyle: "nested",
+      keyStyle: KeyStyle.Nested,
     },
     logging: {
       level: LogLevel.Info,

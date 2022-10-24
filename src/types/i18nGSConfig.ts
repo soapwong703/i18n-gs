@@ -29,7 +29,7 @@ type i18nGSConfig = {
   };
   i18n: {
     path: string;
-    keyStyle: "nested" | "flat";
+    keyStyle: KeyStyle;
     locales?: {
       includes?: string[];
       excludes?: string[];

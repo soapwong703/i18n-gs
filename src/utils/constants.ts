@@ -1,4 +1,8 @@
-import i18nGSConfig, { CredentialType, LogLevel } from "../types/i18nGSConfig";
+import i18nGSConfig, {
+  CredentialType,
+  KeyStyle,
+  LogLevel,
+} from "../types/i18nGSConfig";
 
 export const configFilename = "i18n-gs.config.js";
 
@@ -12,7 +16,7 @@ export const baseConfig: i18nGSConfig = {
   },
   i18n: {
     path: undefined,
-    keyStyle: "nested",
+    keyStyle: KeyStyle.Nested,
     locales: {
       includes: undefined,
       excludes: undefined,
