@@ -103,7 +103,7 @@ module.exports = {
 };
 ```
 
-# `i18n-gs.config.js` fields
+## `i18n-gs.config.js` fields
 
 ## spreadsheet.sheetId
 
@@ -122,7 +122,7 @@ module.exports = {
 
 ## spreadsheet.credential.type
 
-Specifies the method to connect google sheet (Only support service Account for now)
+Specifies the method to connect google sheet (Only support service account for now)
 
 - Type: `'serviceAccount'`
 - Example:
