@@ -2,6 +2,14 @@
   "name": "i18n-gs",
   "version": "1.0.0",
   "description": "Support Google Sheets push and fetch into i18n json file.",
+  "keywords": [
+    "nodejs",
+    "i18n",
+    "download",
+    "upload",
+    "google-sheets",
+    "command-line-tool"
+  ],
   "main": "lib/index.js",
   "bin": {
     "i18ngs": "bin/i18ngs"
