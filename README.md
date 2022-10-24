@@ -1,8 +1,18 @@
 # i18n-gs
 
-# Description
+This tool is to support Google Sheets upload and download i18n json file.
 
-Support Google Sheets upload and download i18n json file.
+# Install
+
+```console
+npm install i18n-gs --save-dev
+```
+
+or
+
+```console
+yarn add i18n-gs --dev
+```
 
 # Usage
 
@@ -32,7 +42,7 @@ Options:
 ```console
 i18ngs upload
 i18ngs upload common
-i18ngs upload common -l en
+i18ngs upload common --locales en
 ```
 
 ## Download
@@ -51,7 +61,7 @@ Options:
 ```console
 i18ngs download
 i18ngs download common
-i18ngs download common -l en
+i18ngs download common --locales en
 ```
 
 # Authentication
