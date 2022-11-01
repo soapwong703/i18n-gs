@@ -2,28 +2,54 @@
 
 This tool is to support Google Sheets upload and download i18n json file.
 
-# Install
+# Installation
+
+As a dependency in a package
 
 ```console
 npm install i18n-gs --save-dev
+# or
+yarn add i18n-gs --dev
 ```
 
-or
+Globally with `npm`
 
 ```console
-yarn add i18n-gs --dev
+npm install i18n-gs -g
 ```
 
 # Usage
 
-Use `i18ngs` command to run from command line
+On-demand:
+
+You can use `npx` to run it without installation
+
+```console
+npx i18n-gs
+```
+
+Installed as a dependency:
+
+```console
+npx i18n-gs
+# or
+yarn i18n-gs
+```
+
+Installed globally:
+
+```console
+i18n-gs
+```
+
+# Commands
 
 ## Init
 
 Initialize the project with config file
 
 ```console
-i18ngs init
+i18n-gs init
 ```
 
 ## Upload
@@ -31,7 +57,7 @@ i18ngs init
 Upload the files to google sheet (only support flat key style)
 
 ```console
-i18ngs upload [namespaces...]
+i18n-gs upload [namespaces...]
 
 Options:
   -l, --locales <locales...>  locales to be included
@@ -40,9 +66,9 @@ Options:
 - Example:
 
 ```console
-i18ngs upload
-i18ngs upload common
-i18ngs upload common --locales en
+i18n-gs upload
+i18n-gs upload common
+i18n-gs upload common --locales en
 ```
 
 ## Download
@@ -50,7 +76,7 @@ i18ngs upload common --locales en
 Download the files from google sheet
 
 ```console
-i18ngs download [namespaces...]
+i18n-gs download [namespaces...]
 
 Options:
   -l, --locales <locales...>  locales to be included
@@ -59,9 +85,9 @@ Options:
 - Example:
 
 ```console
-i18ngs download
-i18ngs download common
-i18ngs download common --locales en
+i18n-gs download
+i18n-gs download common
+i18n-gs download common --locales en
 ```
 
 # Authentication
@@ -96,6 +122,14 @@ module.exports = {
   i18n: {
     path: "<your locale directory path>",
     keyStyle: "nested",
+    locales: {
+      includes: ["en"],
+      excludes: [],
+    },
+    namespaces: {
+      includes: ["common"],
+      excludes: [],
+    },
   },
   logging: {
     level: "info",
@@ -203,6 +237,8 @@ The key style is as follows:
 
 Specifies the locales to include when upload / download
 
+**Note:** If the provided array is empty, nothing will be included when performing action
+
 - Type: `string[]`
 - Example:
 
@@ -236,6 +272,8 @@ module.exports = {
 ## i18n.namespaces.includes
 
 Specifies the namespaces to include when upload / download
+
+**Note:** If the provided array is empty, nothing will be included when performing action
 
 - Type: `string[]`
 - Example:
