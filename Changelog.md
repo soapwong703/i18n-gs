@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning].
 
 ## [Unreleased]
 
+## [1.0.1] - 2022-11-01
+
+- updated bin exec name
+- updated README.md
+
 ## [1.0.0] - 2022-10-24
 
 - initial release
