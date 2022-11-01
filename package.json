@@ -13,7 +13,7 @@
   ],
   "main": "lib/index.js",
   "bin": {
-    "i18ngs": "bin/i18ngs"
+    "i18n-gs": "bin/i18n-gs"
   },
   "files": [
     "bin",

@@ -52,12 +52,12 @@ function i18ngsExec(cmd) {
 
 describe("command line test", () => {
   test("can create a config file", async () => {
-    await expect(i18ngsExec("i18ngs init")).resolves.toBe("");
+    await expect(i18ngsExec("i18n-gs init")).resolves.toBe("");
     expect(fs.existsSync(path.join(testPath, configFilename))).toBe(true);
   });
 
   test("can reject to config file already exists", async () => {
-    await expect(i18ngsExec("i18ngs init")).rejects.toThrow();
+    await expect(i18ngsExec("i18n-gs init")).rejects.toThrow();
   });
 
   test("can download sheets", async () => {
@@ -72,7 +72,7 @@ describe("command line test", () => {
       path.join(testPath, config.spreadsheet.credential.path)
     );
 
-    await expect(i18ngsExec("i18ngs download")).resolves.toBe("");
+    await expect(i18ngsExec("i18n-gs download")).resolves.toBe("");
     const localePath = path.join(testPath, config.i18n.path);
     const locales = fs.readdirSync(localePath);
     locales.forEach((locale) => {
@@ -93,6 +93,6 @@ describe("command line test", () => {
       path.join(testPath, config.spreadsheet.credential.path)
     );
 
-    await expect(i18ngsExec("i18ngs upload")).resolves.toBe("");
+    await expect(i18ngsExec("i18n-gs upload")).resolves.toBe("");
   });
 });
