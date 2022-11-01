@@ -103,6 +103,8 @@ Setup a service account and share sheet's editor permission to the service accou
 5. Click "+ Create Service Account" and follow the steps to create service account
 6. Save the generated JSON credential file to local (or your project root folder)
 7. Update the configuration file
+8. Go to the Google Spreadsheet you plan to use
+9. Share Editor permission to the service account in your Google Spreadsheet
 
 # Configuration
 
