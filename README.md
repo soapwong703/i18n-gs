@@ -106,6 +106,15 @@ Setup a service account and share sheet's editor permission to the service accou
 8. Go to the Google Spreadsheet you plan to use
 9. Share Editor permission to the service account in your Google Spreadsheet
 
+
+# Spreadsheet Format
+
+The first row must contain the following header keys
+1. Column A must be named 'key'
+2. The following columns must be named by language code
+
+You can check the template [here](https://docs.google.com/spreadsheets/d/14R6cbF5pQ6db0Y0ZZNPoH8MeE_fjM81EXjYGqkwS4W0/edit?usp=sharing)
+
 # Configuration
 
 Create a file `i18n-gs.config.js` in the project root
