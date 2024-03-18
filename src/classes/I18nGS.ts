@@ -192,10 +192,21 @@ class i18nGS {
     if (locales.length === 0) exit("No locale available!");
 
     locales.forEach((locale) => {
-      const extensionRegExp = /\.\w+/g;
-      const files = fs
-        .readdirSync(`${path}/${locale}`)
-        .filter((file) => !file.startsWith("."));
+      const extensionRegExp = /\.json+/g;
+      const files = fs.readdirSync(`${path}/${locale}`).filter((file) => {
+        const isHiddenFile = file.startsWith(".");
+        const isValidExtension = file.match(extensionRegExp);
+
+        if (isHiddenFile)
+          log.warn(`File '${file}' is hidden, it will be ignored`);
+
+        if (!isValidExtension)
+          log.warn(
+            `File '${file}' will be ignored. Only extension '.json' is allowed`
+          );
+
+        return !isHiddenFile && isValidExtension;
+      });
 
       const namespaces = (
         _namespacesIncludes ??
