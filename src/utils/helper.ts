@@ -73,7 +73,8 @@ export function generateConfigFile(
 
   fs.writeFileSync(
     configFilename,
-    "module.exports = " + JSON.stringify(configTemplate, null, 2)
+    "module.exports = " +
+      JSON.stringify(mergeDeep(configTemplate, config), null, 2)
   );
   return;
 }
@@ -94,7 +95,7 @@ export function extractGoogleSheetError(err) {
   return `[GoogleAPIError:${code}] ${message}`;
 }
 
-export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
+export function initConfig(customConfig?: DeepPartial<i18nGSConfig>) {
   const pathname = path.resolve(configFilename);
   let fileConfig = undefined;
   const config = baseConfig;
@@ -105,7 +106,7 @@ export function initConfig(inlineConfig?: DeepPartial<i18nGSConfig>) {
     exit(`'${configFilename}' is not defined at: '${pathname}'`);
   }
 
-  if (initConfig) mergeDeep(config, fileConfig, inlineConfig);
+  if (customConfig) mergeDeep(config, fileConfig, customConfig);
 
   validateConfig(config);
 
