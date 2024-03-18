@@ -17,6 +17,11 @@ export enum LogLevel {
   Debug = "debug",
 }
 
+export enum Mode {
+  Overwrite = "overwrite",
+  Append = "append",
+}
+
 type Credential = {
   type: CredentialType.ServiceAccount;
   path: string;
@@ -30,6 +35,7 @@ type i18nGSConfig = {
   i18n: {
     path: string;
     keyStyle: KeyStyle;
+    mode?: Mode;
     locales?: {
       includes?: string[];
       excludes?: string[];
