@@ -37,7 +37,7 @@ class i18nGS {
     if (this.spinner.isSpinning) this.spinner.fail();
   }
 
-  private ensureDocInitialized(): GoogleSpreadsheet {
+  private requireDocument(): GoogleSpreadsheet {
     if (!this.doc) {
       this.failSpinner();
       exit("Document not initialized. Call connect() first.");
@@ -76,7 +76,7 @@ class i18nGS {
   }
 
   async readSheet(namespace: string): Promise<NamespaceData> {
-    const doc = this.ensureDocInitialized();
+    const doc = this.requireDocument();
     const sheet = doc.sheetsByTitle[namespace];
     if (!sheet) {
       log.warn(`Sheet '${namespace}' not found`);
@@ -117,7 +117,7 @@ class i18nGS {
   }
 
   async readSheets(): Promise<SheetsData> {
-    const doc = this.ensureDocInitialized();
+    const doc = this.requireDocument();
     const namespaces = (
       this.config?.i18n?.namespaces?.includes ??
       Object.keys(doc.sheetsByTitle) ??
@@ -316,7 +316,7 @@ class i18nGS {
       return { appendedCount: appendRows.length };
     }
 
-    const doc = this.ensureDocInitialized();
+    const doc = this.requireDocument();
     for await (const [namespace, data] of Object.entries(i18n)) {
       const locales = Object.keys(data);
       const defaultHeaderRow = ["key", ...locales];
