@@ -2,6 +2,7 @@ import {
   GoogleSpreadsheet,
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
+import { JWT } from "google-auth-library";
 import i18nGSConfig, { LogLevel } from "../types/i18nGSConfig";
 import * as path from "path";
 import * as fs from "fs-extra";
@@ -14,12 +15,11 @@ const { unflatten, flatten } = require("flat");
 
 class i18nGS {
   private config: i18nGSConfig;
-  private doc: GoogleSpreadsheet;
+  private doc: GoogleSpreadsheet | null = null;
   private spinner: ora.Ora;
 
   constructor(config: i18nGSConfig) {
     this.config = config;
-    this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId);
     this.spinner = ora({
       isSilent: config?.logging?.level === LogLevel.Silent,
     });
@@ -35,6 +35,14 @@ class i18nGS {
 
   failSpinner() {
     if (this.spinner.isSpinning) this.spinner.fail();
+  }
+
+  private requireDocument(): GoogleSpreadsheet {
+    if (!this.doc) {
+      this.failSpinner();
+      exit("Document not initialized. Call connect() first.");
+    }
+    return this.doc;
   }
 
   async connect() {
@@ -55,14 +63,21 @@ class i18nGS {
       exit(`Credential file is not defined at: '${pathname}'`);
     }
 
-    await this.doc.useServiceAccountAuth(credential);
+    const serviceAccountAuth = new JWT({
+      email: credential.client_email,
+      key: credential.private_key,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
+    this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId, serviceAccountAuth);
     await this.doc.loadInfo();
 
     log.debug("Service account credential verified");
   }
 
   async readSheet(namespace: string): Promise<NamespaceData> {
-    const sheet = this.doc.sheetsByTitle[namespace];
+    const doc = this.requireDocument();
+    const sheet = doc.sheetsByTitle[namespace];
     if (!sheet) {
       log.warn(`Sheet '${namespace}' not found`);
       return undefined;
@@ -88,7 +103,7 @@ class i18nGS {
     rows.forEach((row) => {
       locales.forEach((langKey) => {
         namespaceData[langKey] = namespaceData[langKey] || {};
-        namespaceData[langKey][row.key] = row[langKey] ?? "";
+        namespaceData[langKey][row.get("key")] = row.get(langKey) ?? "";
       });
     });
 
@@ -102,9 +117,10 @@ class i18nGS {
   }
 
   async readSheets(): Promise<SheetsData> {
+    const doc = this.requireDocument();
     const namespaces = (
       this.config?.i18n?.namespaces?.includes ??
-      Object.keys(this.doc.sheetsByTitle) ??
+      Object.keys(doc.sheetsByTitle) ??
       []
     ).filter(
       (namespace) =>
@@ -257,21 +273,22 @@ class i18nGS {
       const clone = JSON.parse(JSON.stringify(data));
       let updatedCount = 0;
       for (const row of rows) {
-        if (!clone?.[row.key]) continue;
-        for (const locale in clone[row.key]) {
+        const rowKey = row.get("key");
+        if (!clone?.[rowKey]) continue;
+        for (const locale in clone[rowKey]) {
           const columnIndex = sheet.headerValues.findIndex(
             (header) => header === locale
           );
           if (columnIndex === -1) continue;
-          const cell = sheet.getCell(row.rowIndex - 1, columnIndex);
-          if (cell.value !== clone[row.key][locale]) {
-            if (cell.value === null && !clone[row.key][locale]) continue;
-            log.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
-            cell.value = clone[row.key][locale] ?? "";
+          const cell = sheet.getCell(row.rowNumber - 1, columnIndex);
+          if (cell.value !== clone[rowKey][locale]) {
+            if (cell.value === null && !clone[rowKey][locale]) continue;
+            log.debug(`Updating ${sheet.title}/${rowKey}/${locale}`);
+            cell.value = clone[rowKey][locale] ?? "";
             updatedCount++;
           }
         }
-        delete clone[row.key];
+        delete clone[rowKey];
       }
 
       if (updatedCount > 0) await sheet.saveUpdatedCells();
@@ -299,13 +316,14 @@ class i18nGS {
       return { appendedCount: appendRows.length };
     }
 
+    const doc = this.requireDocument();
     for await (const [namespace, data] of Object.entries(i18n)) {
       const locales = Object.keys(data);
       const defaultHeaderRow = ["key", ...locales];
-      let sheet = this.doc.sheetsByTitle?.[namespace];
+      let sheet = doc.sheetsByTitle?.[namespace];
 
       if (!sheet) {
-        sheet = await this.doc.addSheet({
+        sheet = await doc.addSheet({
           title: namespace,
           headerValues: defaultHeaderRow,
         });
