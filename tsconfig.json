@@ -11,7 +11,8 @@
       "*": ["node_modules/*", "src/types/*"]
     },
     "emitDecoratorMetadata": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"]
 }

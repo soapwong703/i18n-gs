@@ -2,6 +2,7 @@ import {
   GoogleSpreadsheet,
   GoogleSpreadsheetWorksheet,
 } from "google-spreadsheet";
+import { JWT } from "google-auth-library";
 import i18nGSConfig, { LogLevel } from "../types/i18nGSConfig";
 import * as path from "path";
 import * as fs from "fs-extra";
@@ -14,12 +15,11 @@ const { unflatten, flatten } = require("flat");
 
 class i18nGS {
   private config: i18nGSConfig;
-  private doc: GoogleSpreadsheet;
+  private doc!: GoogleSpreadsheet;
   private spinner: ora.Ora;
 
   constructor(config: i18nGSConfig) {
     this.config = config;
-    this.doc = new GoogleSpreadsheet(this.config.spreadsheet.sheetId);
     this.spinner = ora({
       isSilent: config?.logging?.level === LogLevel.Silent,
     });
@@ -55,7 +55,16 @@ class i18nGS {
       exit(`Credential file is not defined at: '${pathname}'`);
     }
 
-    await this.doc.useServiceAccountAuth(credential);
+    const auth = new JWT({
+      email: credential.client_email,
+      key: credential.private_key,
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+
+    this.doc = new GoogleSpreadsheet(
+      this.config.spreadsheet.sheetId,
+      auth
+    );
     await this.doc.loadInfo();
 
     log.debug("Service account credential verified");
@@ -88,7 +97,7 @@ class i18nGS {
     rows.forEach((row) => {
       locales.forEach((langKey) => {
         namespaceData[langKey] = namespaceData[langKey] || {};
-        namespaceData[langKey][row.key] = row[langKey] ?? "";
+        namespaceData[langKey][row.get("key")] = row.get(langKey) ?? "";
       });
     });
 
@@ -257,21 +266,21 @@ class i18nGS {
       const clone = JSON.parse(JSON.stringify(data));
       let updatedCount = 0;
       for (const row of rows) {
-        if (!clone?.[row.key]) continue;
-        for (const locale in clone[row.key]) {
+        if (!clone?.[row.get("key")]) continue;
+        for (const locale in clone[row.get("key")]) {
           const columnIndex = sheet.headerValues.findIndex(
             (header) => header === locale
           );
           if (columnIndex === -1) continue;
-          const cell = sheet.getCell(row.rowIndex - 1, columnIndex);
-          if (cell.value !== clone[row.key][locale]) {
-            if (cell.value === null && !clone[row.key][locale]) continue;
-            log.debug(`Updating ${sheet.title}/${row.key}/${locale}`);
-            cell.value = clone[row.key][locale] ?? "";
+          const cell = sheet.getCell(row.rowNumber - 1, columnIndex);
+          if (cell.value !== clone[row.get("key")][locale]) {
+            if (cell.value === null && !clone[row.get("key")][locale]) continue;
+            log.debug(`Updating ${sheet.title}/${row.get("key")}/${locale}`);
+            cell.value = clone[row.get("key")][locale] ?? "";
             updatedCount++;
           }
         }
-        delete clone[row.key];
+        delete clone[row.get("key")];
       }
 
       if (updatedCount > 0) await sheet.saveUpdatedCells();
